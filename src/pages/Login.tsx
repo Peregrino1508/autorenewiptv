@@ -64,14 +64,14 @@ const Login = () => {
       <Card className="w-full max-w-2xl relative z-10 bg-white/5 backdrop-blur-md border-white/10">
         <CardHeader className="space-y-8 text-center py-12">
           <div className="flex items-center justify-center space-x-4">
-            <div className="p-3 bg-purple-500/20 rounded-full">
-              <Tv className="w-8 h-8 text-purple-400" />
+            <div className="p-4 bg-purple-500/20 rounded-full">
+              <Tv className="w-12 h-12 text-purple-400" />
             </div>
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+            <CardTitle className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
               R6TV
             </CardTitle>
           </div>
-          <p className="text-slate-400 text-sm">Acesse o painel administrativo</p>
+          <p className="text-slate-400 text-lg">Acesse o painel administrativo</p>
         </CardHeader>
         
         <CardContent className="space-y-6">
