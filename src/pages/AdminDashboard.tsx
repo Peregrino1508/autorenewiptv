@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { PanelsManager } from "@/components/admin/PanelsManager";
 import { PlansManager } from "@/components/admin/PlansManager";
 import { PaymentsViewer } from "@/components/admin/PaymentsViewer";
 import { SettingsManager } from "@/components/admin/SettingsManager";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Activity, Settings, CreditCard, Package, Users } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Activity, Settings, CreditCard, Package, Users, LogOut } from "lucide-react";
 
 const AdminDashboard = () => {
   // Fetch dashboard statistics
