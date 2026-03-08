@@ -61,9 +61,9 @@ const Login = () => {
       {/* Animated background grid */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#4f46e510_1px,transparent_1px),linear-gradient(to_bottom,#4f46e510_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] animate-pulse" />
       
-      <Card className="w-full max-w-md relative z-10 bg-white/5 backdrop-blur-md border-white/10">
-        <CardHeader className="space-y-6 text-center">
-          <div className="flex items-center justify-center space-x-3">
+      <Card className="w-full max-w-2xl relative z-10 bg-white/5 backdrop-blur-md border-white/10">
+        <CardHeader className="space-y-8 text-center py-12">
+          <div className="flex items-center justify-center space-x-4">
             <div className="p-3 bg-purple-500/20 rounded-full">
               <Tv className="w-8 h-8 text-purple-400" />
             </div>
