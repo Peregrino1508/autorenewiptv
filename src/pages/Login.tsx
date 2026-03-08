@@ -88,7 +88,7 @@ const Login = () => {
                         {...field}
                         type="email"
                         placeholder="seu@email.com"
-                        className="bg-white/5 border-white/20 text-white placeholder:text-slate-400 focus:border-purple-400"
+                        className="bg-white/5 border-white/20 text-white placeholder:text-slate-400 focus:border-purple-400 h-12 text-lg"
                         disabled={isLoading}
                       />
                     </FormControl>
