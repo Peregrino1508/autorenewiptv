@@ -109,7 +109,7 @@ const Login = () => {
                           {...field}
                           type={showPassword ? 'text' : 'password'}
                           placeholder="Digite sua senha"
-                          className="bg-white/5 border-white/20 text-white placeholder:text-slate-400 focus:border-purple-400 pr-10"
+                          className="bg-white/5 border-white/20 text-white placeholder:text-slate-400 focus:border-purple-400 pr-12 h-12 text-lg"
                           disabled={isLoading}
                         />
                         <Button
