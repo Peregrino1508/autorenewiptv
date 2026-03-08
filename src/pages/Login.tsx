@@ -82,7 +82,7 @@ const Login = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-slate-300">Email</FormLabel>
+                    <FormLabel className="text-slate-300 text-lg">Email</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
