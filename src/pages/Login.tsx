@@ -102,7 +102,7 @@ const Login = () => {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-slate-300">Senha</FormLabel>
+                    <FormLabel className="text-slate-300 text-lg">Senha</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
