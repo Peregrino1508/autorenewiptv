@@ -12,6 +12,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Activity, Settings, CreditCard, Package, Users, LogOut } from "lucide-react";
 
 const AdminDashboard = () => {
+  const { signOut, user } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   // Fetch dashboard statistics
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
