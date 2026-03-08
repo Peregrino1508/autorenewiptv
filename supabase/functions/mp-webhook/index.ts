@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 serve(async (req) => {
   try {
     const url = new URL(req.url);
-    const id = url.searchParams.get("id") || url.searchParams.get("data.id");
+    let id = url.searchParams.get("id") || url.searchParams.get("data.id");
     let type = url.searchParams.get("type");
 
     if (req.method === 'POST') {
