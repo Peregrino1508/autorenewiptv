@@ -1,15 +1,22 @@
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { PanelsManager } from "@/components/admin/PanelsManager";
 import { PlansManager } from "@/components/admin/PlansManager";
 import { PaymentsViewer } from "@/components/admin/PaymentsViewer";
 import { SettingsManager } from "@/components/admin/SettingsManager";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Activity, Settings, CreditCard, Package, Users } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Activity, Settings, CreditCard, Package, Users, LogOut } from "lucide-react";
 
 const AdminDashboard = () => {
+  const { signOut, user } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   // Fetch dashboard statistics
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
@@ -40,11 +47,25 @@ const AdminDashboard = () => {
       
       <div className="relative z-10 container mx-auto p-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mb-2">
-            Painel Administrativo
-          </h1>
-          <p className="text-slate-400 text-lg">Gestão completa do sistema IPTV</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+              Painel Administrativo
+            </h1>
+            <p className="text-slate-400 text-lg">Gestão completa do sistema IPTV</p>
+            {user?.email && (
+              <p className="text-slate-500 text-sm mt-1">Logado como: {user.email}</p>
+            )}
+          </div>
+          
+          <Button
+            onClick={handleSignOut}
+            variant="outline"
+            className="bg-white/5 border-white/20 text-slate-300 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-400"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sair
+          </Button>
         </div>
 
         {/* Statistics Cards */}
