@@ -67,7 +67,7 @@ export default function Checkout() {
     try {
       const { data, error } = await supabase
         .from("iptv_users")
-        .select("*")
+        .select("*, plans(*)")
         .eq("username", username.trim())
         .eq("is_active", true)
         .single();
