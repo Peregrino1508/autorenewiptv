@@ -10,35 +10,21 @@ serve(async (req) => {
 
   try {
     const token = "7222a544a4eddc1fadcfb1fa679fa2fb";
-    const apiBase = "https://api-new.paineloffice.click";
     const authHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+    // Get swagger JSON
+    const paths = [
+      'https://api-new.paineloffice.click/api-docs/swagger.json',
+      'https://api-new.paineloffice.click/api-docs-json',
+      'https://api-new.paineloffice.click/swagger.json',
+      'https://api-new.paineloffice.click/api-docs/v1/swagger.json',
+    ];
     const results: any[] = [];
 
-    // Check for API docs
-    const docPaths = ['/docs', '/swagger', '/api-docs', '/api', '/p2p/docs', '/p2p/swagger', '/p2p/routes'];
-    for (const p of docPaths) {
-      const r = await fetch(`${apiBase}${p}`, { headers: authHeaders });
+    for (const url of paths) {
+      const r = await fetch(url, { headers: authHeaders });
       const t = await r.text();
-      results.push({ path: p, status: r.status, body: t.substring(0, 300) });
-    }
-
-    // Try different extend body structures with ALL possible fields
-    const userId = "20555";
-    const testBodies = [
-      { name: 'telegram', body: { telegram: "" } },
-      { name: 'whatsapp', body: { whatsapp: " 55 " } },
-      { name: 'sale_value', body: { sale_value: 0 } },
-      { name: 'reseller', body: { reseller: "4556" } },
-      { name: 'renewal', body: { renewal: true } },
-      { name: 'extend', body: { extend: true } },
-      { name: 'renew', body: { renew: true } },
-      { name: 'period+package', body: { period: 30, package: "5da17892133a1d61888029aa" } },
-      { name: 'expDate camel', body: { expDate: "2026-05-08T23:59:59.999Z" } },
-      { name: 'expirationDate', body: { expirationDate: "2026-05-08T23:59:59.999Z" } },
-    ];
-    for (const t of testBodies) {
-      const r = await fetch(`${apiBase}/p2p/extend/${userId}`, { method: 'PUT', headers: authHeaders, body: JSON.stringify(t.body) });
-      results.push({ test: t.name, status: r.status, body: (await r.text()).substring(0, 200) });
+      results.push({ url, status: r.status, body: t.substring(0, 2000) });
     }
 
     return new Response(JSON.stringify(results, null, 2), {
