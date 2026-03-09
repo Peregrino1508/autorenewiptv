@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
+import Success from "./pages/Success";
 import Checkout from "./pages/Checkout";
 import Login from "./pages/Login";
 
@@ -30,8 +31,9 @@ const App = () => (
                   <AdminDashboard />
                 </ProtectedRoute>
               } 
-            />
+              />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/success" element={<Success />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

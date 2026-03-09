@@ -147,46 +147,12 @@ export default function Checkout() {
     }
   };
 
-  if (status === 'success') {
-    return (
-      <div className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(34,197,94,0.15),rgba(255,255,255,0))] flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-slate-900/90 backdrop-blur-xl border-green-500/30 shadow-[0_0_60px_-15px_rgba(34,197,94,0.3)] animate-scale-in">
-          <CardHeader className="text-center pt-10 pb-2">
-            <div className="relative mx-auto mb-6">
-              <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]">
-                <ShieldCheck className="w-10 h-10 text-green-400" />
-              </div>
-              <span className="absolute -top-2 -right-2 text-2xl animate-bounce">🎉</span>
-              <span className="absolute -bottom-1 -left-2 text-xl animate-bounce [animation-delay:0.3s]">✨</span>
-            </div>
-            <CardTitle className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300 mb-3">
-              Parabéns! 🥳
-            </CardTitle>
-            <CardDescription className="text-slate-300 text-base leading-relaxed space-y-2">
-              <p className="text-lg font-semibold text-green-400/90">
-                Seu IPTV foi renovado com sucesso! ✅
-              </p>
-              <p>
-                Os créditos já foram adicionados à sua conta e você já pode aproveitar todos os canais e conteúdos. 📺🍿
-              </p>
-              <p className="text-slate-400 text-sm mt-4">
-                Obrigado por renovar conosco! 💚<br />
-                Qualquer dúvida, estamos à disposição. 😊
-              </p>
-            </CardDescription>
-          </CardHeader>
-          <CardFooter className="pb-8 pt-4 px-8">
-            <Button 
-              className="w-full h-12 text-base bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg shadow-green-500/20" 
-              onClick={() => window.location.href = '/checkout'}
-            >
-              Fazer nova renovação 🔄
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
+  // Redirect to success page if payment is successful
+  useEffect(() => {
+    if (status === 'success') {
+      navigate(`/success${formData.iptv_username ? `?user=${formData.iptv_username}` : ''}`, { replace: true });
+    }
+  }, [status, navigate, formData.iptv_username]);
 
   return (
     <div className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))] flex flex-col items-center justify-center p-4 relative">
@@ -207,6 +173,21 @@ export default function Checkout() {
           Renove seu IPTV
         </h1>
         <p className="text-slate-400">Rápido, seguro e ativação imediata</p>
+        
+        {/* Debug Button - Success Simulation */}
+        {isAdmin && (
+          <div className="mt-4 flex justify-center">
+            <Button
+              onClick={() => navigate('/checkout?status=success')}
+              variant="outline"
+              size="sm"
+              className="bg-yellow-500/10 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 hover:text-yellow-300 gap-2 border-dashed"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Simular Sucesso (Admin)
+            </Button>
+          </div>
+        )}
       </div>
 
       <Card className="w-full max-w-xl bg-slate-900/80 backdrop-blur-xl border-slate-800 shadow-2xl">
