@@ -42,8 +42,20 @@ serve(async (req) => {
         throw new Error('Usuário não encontrado. Verifique o número do usuário cadastrado.');
       }
 
-      amount = Number(registeredUser.amount_due);
-      paymentDescription = `Renovação IPTV - Usuário: ${iptv_username} - Valor: R$ ${amount.toFixed(2)}`;
+      // Get the current active plan price
+      const { data: activePlan, error: planError } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('is_active', true)
+        .limit(1)
+        .single();
+
+      if (planError || !activePlan) {
+        throw new Error('Nenhum plano ativo encontrado');
+      }
+
+      amount = Number(activePlan.price);
+      paymentDescription = `Renovação IPTV - ${activePlan.name} - Usuário: ${iptv_username} - Valor: R$ ${amount.toFixed(2)}`;
       
       // Get the first active panel for this user
       const { data: firstActivePanel, error: panelError } = await supabase
