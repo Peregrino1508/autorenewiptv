@@ -119,8 +119,15 @@ serve(async (req) => {
           }),
         });
 
-        const loginData = await loginResponse.json();
-        console.log('XUI Login response status:', loginResponse.status);
+        const responseText = await loginResponse.text();
+        console.log('Login raw response:', responseText.substring(0, 200));
+        
+        let loginData;
+        try {
+          loginData = JSON.parse(responseText);
+        } catch (e) {
+          throw new Error(`A API do painel não retornou JSON válido no login. Verifique se a URL da API está correta e se a rota /api.php existe para o seu nível de acesso (revenda). Resposta: ${responseText.substring(0, 100)}`);
+        }
 
         // 2. Buscar info do usuário via player_api
         const playerApiUrl = `${xuiApiUrl}/player_api.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(username)}`;
