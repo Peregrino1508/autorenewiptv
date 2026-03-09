@@ -187,6 +187,18 @@ export function PanelsManager() {
               </div>
               
               <div>
+                <Label htmlFor="renewal_url">URL de Renovação Customizada (Opcional)</Label>
+                <Input
+                  id="renewal_url"
+                  type="url"
+                  value={formData.renewal_url}
+                  onChange={(e) => setFormData({ ...formData, renewal_url: e.target.value })}
+                  className="bg-white/10 border-white/20 text-white"
+                  placeholder="https://painel.ai/users?users=P2P&page=1"
+                />
+              </div>
+              
+              <div>
                 <Label htmlFor="admin_user">Usuário Admin</Label>
                 <Input
                   id="admin_user"
