@@ -12,8 +12,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, Tv } from 'lucide-react';
 
 const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  email: z.string().email('Por favor, insira um email válido'),
+  password: z.string().min(6, 'A senha deve conter pelo menos 6 caracteres'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -50,7 +50,7 @@ const Login = () => {
     const { error: signInError } = await signIn(data.email, data.password);
 
     if (signInError) {
-      setError('Email ou senha incorretos. Tente novamente.');
+      setError('Credenciais inválidas. Verifique seu email e senha e tente novamente.');
     }
 
     setIsLoading(false);
@@ -71,7 +71,7 @@ const Login = () => {
               R6TV
             </CardTitle>
           </div>
-          <p className="text-slate-700 text-xl">Acesse o painel administrativo</p>
+          <p className="text-slate-700 text-xl">Portal Administrativo R6TV</p>
         </CardHeader>
         
         <CardContent className="space-y-16 px-20 pb-24">
@@ -87,7 +87,7 @@ const Login = () => {
                       <Input
                         {...field}
                         type="email"
-                        placeholder="seu@email.com"
+                        placeholder="Digite seu email"
                         className="bg-white/70 border-blue-300/60 text-slate-800 placeholder:text-slate-500 focus:border-purple-500 focus:ring-purple-500/20 h-14 text-xl"
                         disabled={isLoading}
                       />
@@ -140,7 +140,7 @@ const Login = () => {
                 className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800 text-white font-semibold py-5 text-xl h-16 shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-300"
                 disabled={isLoading}
               >
-                {isLoading ? 'Entrando...' : 'Entrar'}
+                {isLoading ? 'Conectando...' : 'Acessar Painel'}
               </Button>
             </form>
           </Form>
