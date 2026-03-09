@@ -155,19 +155,20 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))] flex flex-col items-center justify-center p-4">
-      <div className="text-center mb-8 relative">
-        {/* Admin Back Button */}
-        {isAdmin && (
-          <Button
-            onClick={() => navigate('/admin')}
-            variant="ghost"
-            className="absolute left-0 top-0 text-slate-400 hover:text-white"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar ao Admin
-          </Button>
-        )}
+    <div className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))] flex flex-col items-center justify-center p-4 relative">
+      {/* Admin Back Button - Top Right */}
+      {isAdmin && (
+        <Button
+          onClick={() => navigate('/admin')}
+          variant="ghost"
+          className="absolute top-4 right-4 text-slate-400 hover:text-white z-10"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Voltar ao Admin
+        </Button>
+      )}
+      
+      <div className="text-center mb-8">
         <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 mb-2">
           Renove seu IPTV
         </h1>
