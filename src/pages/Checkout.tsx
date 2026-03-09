@@ -195,11 +195,11 @@ export default function Checkout() {
         <form onSubmit={handleSubmit}>
           <CardContent className="p-6 space-y-6">
             {/* Show registered user info if available */}
-            {registeredUser && (
+            {registeredUser && currentPlan && (
               <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
                 <h3 className="text-green-400 font-semibold mb-2">✓ Usuário Encontrado</h3>
                 <p className="text-slate-300 text-sm">
-                  Valor a pagar: <span className="text-green-400 font-bold">R$ {Number(registeredUser.amount_due).toFixed(2)}</span>
+                  Valor a pagar: <span className="text-green-400 font-bold">R$ {Number(currentPlan.price).toFixed(2)}</span>
                 </p>
                 {registeredUser.customer_name && (
                   <p className="text-slate-400 text-sm">Cliente: {registeredUser.customer_name}</p>
