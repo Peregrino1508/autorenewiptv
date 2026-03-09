@@ -94,16 +94,16 @@ serve(async (req) => {
       throw new Error('MERCADOPAGO_ACCESS_TOKEN is not configured');
     }
 
-    // Criar pagamento pendente no banco
+    // Create pending payment in database
     const { data: paymentRecord, error: paymentError } = await supabase
       .from('payments')
       .insert({
         iptv_username,
         customer_email,
         customer_name,
-        plan_id,
+        plan_id: planData?.id || null,
         panel_id: panelData.id,
-        amount: plan.price,
+        amount: amount,
         status: 'pending',
       })
       .select()
