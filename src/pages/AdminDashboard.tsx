@@ -7,11 +7,12 @@ import { PaymentsViewer } from "@/components/admin/PaymentsViewer";
 import { SettingsManager } from "@/components/admin/SettingsManager";
 import { IptvUsersManager } from "@/components/admin/IptvUsersManager";
 import { CreateTrialDialog } from "@/components/admin/CreateTrialDialog";
+import { FinancialReports } from "@/components/admin/FinancialReports";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart } from "lucide-react";
+import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart, DollarSign, FileText } from "lucide-react";
 
 const AdminDashboard = () => {
   const { signOut, user } = useAuth();
@@ -25,21 +26,27 @@ const AdminDashboard = () => {
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
       const [panelsResult, plansResult, paymentsResult] = await Promise.all([
-        supabase.from("iptv_panels").select("*", { count: "exact" }),
-        supabase.from("plans").select("*", { count: "exact" }),
-        supabase.from("payments").select("amount, status").eq("status", "approved"),
+        supabase.from("iptv_panels").select("*", { count: "exact", head: true }),
+        supabase.from("plans").select("*", { count: "exact", head: true }),
+        supabase.from("payments").select("amount").eq("status", "approved").gte("created_at", startOfMonth),
       ]);
 
-      const totalRevenue = paymentsResult.data?.reduce((sum, payment) => 
-        sum + Number(payment.amount), 0
-      ) || 0;
+      let monthlyProfit = 0;
+      const monthlyPayments = paymentsResult.data?.length || 0;
+
+      paymentsResult.data?.forEach(payment => {
+        monthlyProfit += (Number(payment.amount) - 12);
+      });
 
       return {
         totalPanels: panelsResult.count || 0,
         totalPlans: plansResult.count || 0,
-        totalPayments: paymentsResult.data?.length || 0,
-        totalRevenue: totalRevenue.toFixed(2),
+        monthlyPayments,
+        monthlyProfit: monthlyProfit.toFixed(2),
       };
     },
   });
@@ -117,8 +124,8 @@ const AdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-sm font-medium">Pagamentos</p>
-                  <p className="text-3xl font-bold text-white">{stats?.totalPayments || 0}</p>
+                  <p className="text-slate-400 text-sm font-medium">Pagamentos do Mês</p>
+                  <p className="text-3xl font-bold text-white">{stats?.monthlyPayments || 0}</p>
                 </div>
                 <div className="p-3 bg-yellow-500/20 rounded-full">
                   <Activity className="w-6 h-6 text-yellow-400" />
@@ -131,11 +138,11 @@ const AdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-sm font-medium">Receita Total</p>
-                  <p className="text-3xl font-bold text-white">R$ {stats?.totalRevenue || '0.00'}</p>
+                  <p className="text-slate-400 text-sm font-medium">Lucro do Mês</p>
+                  <p className="text-3xl font-bold text-white">R$ {stats?.monthlyProfit || '0.00'}</p>
                 </div>
-                <div className="p-3 bg-purple-500/20 rounded-full">
-                  <CreditCard className="w-6 h-6 text-purple-400" />
+                <div className="p-3 bg-green-500/20 rounded-full">
+                  <DollarSign className="w-6 h-6 text-green-400" />
                 </div>
               </div>
             </CardContent>
@@ -149,38 +156,45 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="panels" className="w-full">
-              <TabsList className="grid w-full grid-cols-5 bg-white/10 rounded-lg p-1">
+              <TabsList className="flex flex-wrap w-full bg-white/10 rounded-lg p-1 gap-1">
                 <TabsTrigger 
                   value="panels" 
-                  className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
                 >
                   <Users className="w-4 h-4 mr-2" />
                   Painéis
                 </TabsTrigger>
                 <TabsTrigger 
                   value="users" 
-                  className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
                 >
                   <Users className="w-4 h-4 mr-2" />
                   Usuários
                 </TabsTrigger>
                 <TabsTrigger 
                   value="plans" 
-                  className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
                 >
                   <Package className="w-4 h-4 mr-2" />
                   Planos
                 </TabsTrigger>
                 <TabsTrigger 
                   value="payments" 
-                  className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
                 >
                   <CreditCard className="w-4 h-4 mr-2" />
                   Pagamentos
                 </TabsTrigger>
                 <TabsTrigger 
+                  value="financial" 
+                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Extratos
+                </TabsTrigger>
+                <TabsTrigger 
                   value="settings" 
-                  className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
                 >
                   <Settings className="w-4 h-4 mr-2" />
                   Configurações
@@ -201,6 +215,10 @@ const AdminDashboard = () => {
 
               <TabsContent value="payments" className="mt-6">
                 <PaymentsViewer />
+              </TabsContent>
+
+              <TabsContent value="financial" className="mt-6">
+                <FinancialReports />
               </TabsContent>
 
               <TabsContent value="settings" className="mt-6">
