@@ -149,10 +149,16 @@ serve(async (req) => {
         }
         console.log(`Token obtido: ${token.substring(0, 8)}...`);
 
+        // Headers de autenticação para todas as chamadas
+        const authHeaders = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        };
+
         // 2. Buscar usuário na lista para encontrar o ID interno
-        const listUrl = `${apiBase}/list?username=${encodeURIComponent(adminUser)}&password=${encodeURIComponent(adminPassword)}&token=${encodeURIComponent(token)}&limit=100&page=1&orderBy=id&order=desc&search=${encodeURIComponent(username)}`;
+        const listUrl = `${apiBase}/list?limit=100&page=1&orderBy=id&order=desc&search=${encodeURIComponent(username)}`;
         console.log(`Buscando usuário ${username} na lista...`);
-        const listResponse = await fetch(listUrl);
+        const listResponse = await fetch(listUrl, { headers: authHeaders });
         const listText = await listResponse.text();
         console.log(`List response status: ${listResponse.status}, body: ${listText.substring(0, 500)}`);
 
@@ -181,9 +187,9 @@ serve(async (req) => {
         }
 
         // 3. Chamar PUT /extend/{userId} para renovar
-        const extendUrl = `${apiBase}/extend/${internalUserId}?username=${encodeURIComponent(adminUser)}&password=${encodeURIComponent(adminPassword)}&token=${encodeURIComponent(token)}`;
+        const extendUrl = `${apiBase}/extend/${internalUserId}`;
         console.log(`Chamando PUT extend para usuário ID ${internalUserId}...`);
-        const extendResponse = await fetch(extendUrl, { method: 'PUT' });
+        const extendResponse = await fetch(extendUrl, { method: 'PUT', headers: authHeaders });
         const extendText = await extendResponse.text();
         console.log(`Extend response status: ${extendResponse.status}, body: ${extendText.substring(0, 300)}`);
 
