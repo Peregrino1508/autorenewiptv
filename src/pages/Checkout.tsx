@@ -200,6 +200,11 @@ export default function Checkout() {
                 <p className="text-slate-300 text-sm">
                   Valor a pagar: <span className="text-green-400 font-bold">R$ {Number(registeredUser.amount_due).toFixed(2)}</span>
                 </p>
+                {registeredUser.plans && (
+                  <p className="text-slate-300 text-sm">
+                    Plano: <span className="text-blue-400 font-semibold">{registeredUser.plans.name} ({registeredUser.plans.duration_days} dias)</span>
+                  </p>
+                )}
                 {registeredUser.customer_name && (
                   <p className="text-slate-400 text-sm">Cliente: {registeredUser.customer_name}</p>
                 )}
