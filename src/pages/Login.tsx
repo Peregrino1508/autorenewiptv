@@ -87,7 +87,7 @@ const Login = () => {
                       <Input
                         {...field}
                         type="email"
-                        placeholder="seu@email.com"
+                        placeholder="Digite seu email"
                         className="bg-white/70 border-blue-300/60 text-slate-800 placeholder:text-slate-500 focus:border-purple-500 focus:ring-purple-500/20 h-14 text-xl"
                         disabled={isLoading}
                       />
