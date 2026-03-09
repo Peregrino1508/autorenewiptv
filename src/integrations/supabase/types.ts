@@ -92,6 +92,45 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_statements: {
+        Row: {
+          created_at: string | null
+          gross_revenue: number
+          id: string
+          month: number
+          net_profit: number
+          renewed_plans: number
+          total_expenses: number
+          total_payments: number
+          updated_at: string | null
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          gross_revenue?: number
+          id?: string
+          month: number
+          net_profit?: number
+          renewed_plans?: number
+          total_expenses?: number
+          total_payments?: number
+          updated_at?: string | null
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          gross_revenue?: number
+          id?: string
+          month?: number
+          net_profit?: number
+          renewed_plans?: number
+          total_expenses?: number
+          total_payments?: number
+          updated_at?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
