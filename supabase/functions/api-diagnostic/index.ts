@@ -17,7 +17,12 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get panel credentials
+    const body = await req.json().catch(() => ({}));
+    const action = body.action || 'test-login';
+
+    const results: any = { action };
+
+    // Get panel
     const { data: panel } = await supabase
       .from('iptv_panels')
       .select('*')
@@ -26,61 +31,100 @@ serve(async (req) => {
 
     if (!panel) throw new Error('Painel não encontrado');
 
-    const adminUser = panel.admin_user;
-    const adminPassword = panel.admin_password;
-    const apiBase = panel.url.replace(/\/+$/, '');
-    const apiRoot = apiBase.replace(/\/(p2p|iptv|nexus|red-club)$/i, '');
+    const apiRoot = panel.url.replace(/\/+$/, '').replace(/\/(p2p|iptv|nexus|red-club)$/i, '');
+    results.panel = panel.name;
+    results.apiRoot = apiRoot;
 
-    const results: any = { panel_name: panel.name, apiRoot, adminUser };
+    if (action === 'update-password') {
+      // Update password in DB to real password
+      const { error } = await supabase
+        .from('iptv_panels')
+        .update({ admin_password: 'vitoriadaluz' })
+        .eq('id', panel.id);
+      results.password_updated = !error;
+      if (error) results.update_error = error.message;
+    }
 
-    // Step 1: Login
-    const loginResponse = await fetch(`${apiRoot}/auth/login`, {
+    // Always test login with real password
+    const testPassword = action === 'update-password' ? 'vitoriadaluz' : panel.admin_password;
+    
+    const loginResp = await fetch(`${apiRoot}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: adminUser, password: adminPassword })
+      body: JSON.stringify({ username: panel.admin_user, password: testPassword })
     });
-    const loginData = await loginResponse.json();
-    results.login_status = loginResponse.status;
+    const loginData = await loginResp.json();
+    results.login_status = loginResp.status;
     results.login_success = !!loginData.auth;
-    results.has_token = !!loginData.token;
+    results.password_used = testPassword.substring(0, 4) + '...';
 
     if (!loginData.auth || !loginData.token) {
-      results.login_error = loginData;
-      return new Response(JSON.stringify(results), {
+      // Try with vitoriadaluz if current password failed
+      if (testPassword !== 'vitoriadaluz') {
+        const login2 = await fetch(`${apiRoot}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: panel.admin_user, password: 'vitoriadaluz' })
+        });
+        const login2Data = await login2.json();
+        results.retry_with_real_password = login2.status;
+        results.retry_success = !!login2Data.auth;
+        
+        if (login2Data.auth && login2Data.token) {
+          results.message = 'Login com senha real funcionou! Atualizando banco...';
+          // Update DB
+          await supabase.from('iptv_panels').update({ admin_password: 'vitoriadaluz' }).eq('id', panel.id);
+          results.db_updated = true;
+          
+          // Now try create P2P trial
+          const authToken = login2Data.token;
+          const qs = `token=${encodeURIComponent(authToken)}&password=${encodeURIComponent('vitoriadaluz')}&username=${encodeURIComponent(panel.admin_user)}`;
+          
+          if (action === 'create-p2p-trial') {
+            const createResp = await fetch(`${apiRoot}/p2p?${qs}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+              body: JSON.stringify({ isTrial: true, packageId: "5da17892133a1d61888029aa", notes: "teste-lovable", typeUser: 2 })
+            });
+            results.p2p_create_status = createResp.status;
+            results.p2p_create_data = await createResp.json();
+          }
+        }
+      }
+      
+      if (!results.db_updated) {
+        results.login_error = loginData;
+      }
+      
+      return new Response(JSON.stringify(results, null, 2), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
     const authToken = loginData.token;
-    const authQs = `token=${encodeURIComponent(authToken)}&password=${encodeURIComponent(adminPassword)}&username=${encodeURIComponent(adminUser)}`;
+    results.token_obtained = authToken.substring(0, 20) + '...';
 
-    // Step 2: Try to get price info for IPTV
-    try {
-      const priceResp = await fetch(`${apiRoot}/iptv/price?${authQs}`, {
-        headers: { 'Authorization': `Bearer ${authToken}` }
-      });
-      results.iptv_price_status = priceResp.status;
-      results.iptv_price = await priceResp.json();
-    } catch (e) { results.iptv_price_error = e.message; }
-
-    // Step 3: Try P2P create with isTrial=true (should be free)
-    try {
-      const p2pResp = await fetch(`${apiRoot}/p2p?${authQs}`, {
+    if (action === 'create-p2p-trial') {
+      const qs = `token=${encodeURIComponent(authToken)}&password=${encodeURIComponent(testPassword)}&username=${encodeURIComponent(panel.admin_user)}`;
+      const createResp = await fetch(`${apiRoot}/p2p?${qs}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({
-          isTrial: true,
-          packageId: "5da17892133a1d61888029aa",
-          notes: "teste-diagnostico-lovable",
-          typeUser: 2
-        })
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+        body: JSON.stringify({ isTrial: true, packageId: "5da17892133a1d61888029aa", notes: "teste-lovable", typeUser: 2 })
       });
-      results.p2p_create_status = p2pResp.status;
-      results.p2p_create_data = await p2pResp.json();
-    } catch (e) { results.p2p_create_error = e.message; }
+      results.p2p_create_status = createResp.status;
+      results.p2p_create_data = await createResp.json();
+    }
+
+    if (action === 'create-iptv-trial') {
+      const qs = `token=${encodeURIComponent(authToken)}&password=${encodeURIComponent(testPassword)}&username=${encodeURIComponent(panel.admin_user)}`;
+      const createResp = await fetch(`${apiRoot}/iptv?${qs}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+        body: JSON.stringify({ packageId: 24, isTrial: true, notes: "teste-lovable", screen: 1, whatsapp: "" })
+      });
+      results.iptv_create_status = createResp.status;
+      results.iptv_create_data = await createResp.json();
+    }
 
     return new Response(JSON.stringify(results, null, 2), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
