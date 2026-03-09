@@ -166,13 +166,17 @@ const AdminDashboard = () => {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="panels" className="mt-6">
-                <PanelsManager />
-              </TabsContent>
+          <TabsContent value="panels" className="mt-6">
+            <PanelsManager />
+          </TabsContent>
 
-              <TabsContent value="plans" className="mt-6">
-                <PlansManager />
-              </TabsContent>
+          <TabsContent value="users" className="mt-6">
+            <IptvUsersManager />
+          </TabsContent>
+
+          <TabsContent value="plans" className="mt-6">
+            <PlansManager />
+          </TabsContent>
 
               <TabsContent value="payments" className="mt-6">
                 <PaymentsViewer />
