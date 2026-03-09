@@ -8,6 +8,3 @@ verify_jwt = false
 
 [functions.create-trial]
 verify_jwt = false
-
-[functions.api-diagnostic]
-verify_jwt = false
