@@ -217,6 +217,10 @@ const AdminDashboard = () => {
                 <PaymentsViewer />
               </TabsContent>
 
+              <TabsContent value="financial" className="mt-6">
+                <FinancialReports />
+              </TabsContent>
+
               <TabsContent value="settings" className="mt-6">
                 <SettingsManager />
               </TabsContent>
