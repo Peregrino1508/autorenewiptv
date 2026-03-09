@@ -61,34 +61,34 @@ const Login = () => {
       {/* Animated background grid */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#3b82f630_1px,transparent_1px),linear-gradient(to_bottom,#8b5cf630_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] animate-pulse" />
       
-      <Card className="w-full max-w-2xl relative z-10 bg-white/60 backdrop-blur-lg border-white/40 shadow-2xl shadow-purple-500/30">
-        <CardHeader className="space-y-8 text-center py-12">
+      <Card className="w-full max-w-6xl relative z-10 bg-white/60 backdrop-blur-lg border-white/40 shadow-2xl shadow-purple-500/30">
+        <CardHeader className="space-y-12 text-center py-16">
           <div className="flex items-center justify-center space-x-4">
-            <div className="p-4 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full">
-              <Tv className="w-12 h-12 text-blue-600" />
+            <div className="p-6 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full">
+              <Tv className="w-16 h-16 text-blue-600" />
             </div>
-            <CardTitle className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
+            <CardTitle className="text-7xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
               R6TV
             </CardTitle>
           </div>
-          <p className="text-slate-700 text-lg">Acesse o painel administrativo</p>
+          <p className="text-slate-700 text-xl">Acesse o painel administrativo</p>
         </CardHeader>
         
-        <CardContent className="space-y-8 px-12 pb-12">
+        <CardContent className="space-y-12 px-16 pb-16">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-slate-700 text-lg font-semibold">Email</FormLabel>
+                    <FormLabel className="text-slate-700 text-xl font-semibold">Email</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         type="email"
                         placeholder="seu@email.com"
-                        className="bg-white/70 border-blue-300/60 text-slate-800 placeholder:text-slate-500 focus:border-purple-500 focus:ring-purple-500/20 h-12 text-lg"
+                        className="bg-white/70 border-blue-300/60 text-slate-800 placeholder:text-slate-500 focus:border-purple-500 focus:ring-purple-500/20 h-14 text-xl"
                         disabled={isLoading}
                       />
                     </FormControl>
@@ -102,14 +102,14 @@ const Login = () => {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-slate-700 text-lg font-semibold">Senha</FormLabel>
+                    <FormLabel className="text-slate-700 text-xl font-semibold">Senha</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           {...field}
                           type={showPassword ? 'text' : 'password'}
                           placeholder="Digite sua senha"
-                          className="bg-white/70 border-blue-300/60 text-slate-800 placeholder:text-slate-500 focus:border-purple-500 focus:ring-purple-500/20 pr-12 h-12 text-lg"
+                          className="bg-white/70 border-blue-300/60 text-slate-800 placeholder:text-slate-500 focus:border-purple-500 focus:ring-purple-500/20 pr-12 h-14 text-xl"
                           disabled={isLoading}
                         />
                         <Button
@@ -120,7 +120,7 @@ const Login = () => {
                           onClick={() => setShowPassword(!showPassword)}
                           disabled={isLoading}
                         >
-                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          {showPassword ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
                         </Button>
                       </div>
                     </FormControl>
@@ -130,14 +130,14 @@ const Login = () => {
               />
 
               {error && (
-                <Alert className="border-red-400/40 bg-red-50/80 text-red-700 text-lg">
+                <Alert className="border-red-400/40 bg-red-50/80 text-red-700 text-xl">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800 text-white font-semibold py-4 text-lg h-14 shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-300"
+                className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800 text-white font-semibold py-5 text-xl h-16 shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-300"
                 disabled={isLoading}
               >
                 {isLoading ? 'Entrando...' : 'Entrar'}
