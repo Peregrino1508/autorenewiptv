@@ -44,15 +44,39 @@ serve(async (req) => {
     if (panelError || !panel) throw new Error('Painel não encontrado');
 
     const adminUser = panel.admin_user;
-    const adminPassword = panel.admin_password; // This is the API token/Bearer token
+    const adminPassword = panel.admin_password;
     const apiBase = panel.url.replace(/\/+$/, '');
     const apiRoot = apiBase.replace(/\/(p2p|iptv|nexus|red-club)$/i, '');
 
-    // Use admin_password directly as Bearer token (it's the API token)
-    const authToken = adminPassword;
+    // Step 1: Login to get JWT token
+    console.log(`Autenticando via POST /auth/login com usuário ${adminUser}...`);
+    const loginResponse = await fetch(`${apiRoot}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: adminUser, password: adminPassword })
+    });
+    const loginText = await loginResponse.text();
+    console.log(`Login response status: ${loginResponse.status}, body: ${loginText.substring(0, 300)}`);
+
+    let loginData;
+    try { loginData = JSON.parse(loginText); } catch (e) {
+      throw new Error(`Falha ao parsear resposta do login: ${loginText.substring(0, 200)}`);
+    }
+
+    // If login fails, try using admin_password directly as the token
+    let authToken: string;
+    if (loginData.auth && loginData.token) {
+      authToken = loginData.token;
+      console.log(`JWT obtido via login: ${authToken.substring(0, 20)}...`);
+    } else {
+      // Fallback: use admin_password as direct token
+      authToken = adminPassword;
+      console.log(`Login falhou, usando admin_password como token direto: ${authToken.substring(0, 8)}...`);
+    }
+
     const authQs = `token=${encodeURIComponent(authToken)}&password=${encodeURIComponent(adminPassword)}&username=${encodeURIComponent(adminUser)}`;
 
-    // Create trial user based on system type
+    // Step 2: Create trial user
     let createUrl: string;
     let createBody: Record<string, unknown>;
     const trialNotes = notes || 'teste-auto';
@@ -82,11 +106,13 @@ serve(async (req) => {
     }
 
     console.log(`Criando teste ${system_type} via POST ${createUrl.split('?')[0]}...`);
-    console.log(`Auth params - token: ${authToken.substring(0,8)}..., username: ${adminUser}`);
+    
+    // Try with Bearer header + query params
     const createResponse = await fetch(createUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify(createBody)
     });
