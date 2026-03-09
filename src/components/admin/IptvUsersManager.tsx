@@ -37,6 +37,19 @@ export function IptvUsersManager() {
         .order("created_at", { ascending: false });
       
       if (error) throw error;
+      return data as IptvUser[];
+    },
+  });
+
+  const { data: plans } = useQuery({
+    queryKey: ["iptv-plans"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("plans")
+        .select("*")
+        .eq("is_active", true)
+        .order("price", { ascending: true });
+      if (error) throw error;
       return data;
     },
   });
