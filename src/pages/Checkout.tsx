@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const status = searchParams.get("status");
   const userParam = searchParams.get("user");
   
@@ -18,6 +19,25 @@ export default function Checkout() {
     iptv_username: userParam || "",
     customer_email: "",
     customer_name: "",
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [registeredUser, setRegisteredUser] = useState<any>(null);
+
+  // Check if current user is admin
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin'
+      });
+      
+      return data || false;
+    },
   });
 
   const [isLoading, setIsLoading] = useState(false);
