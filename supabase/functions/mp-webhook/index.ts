@@ -100,42 +100,65 @@ serve(async (req) => {
 
         const adminUser = panel.admin_user;
         const adminPassword = panel.admin_password;
-        // Usar a URL configurada no painel como base da API
-        const apiBase = panel.url.replace(/\/+$/, ''); // remover trailing slash
+        const apiBase = panel.url.replace(/\/+$/, '');
 
         console.log(`Iniciando renovação para usuário ${username} via API ${apiBase}`);
 
-        // 1. Obter token via /info
-        const infoUrl = `${apiBase}/info/?username=${encodeURIComponent(adminUser)}&password=${encodeURIComponent(adminPassword)}`;
-        console.log(`Chamando info: ${apiBase}/info/?username=${adminUser}&password=***`);
-        const infoResponse = await fetch(infoUrl);
-        const infoText = await infoResponse.text();
-        console.log(`Info response status: ${infoResponse.status}, body: ${infoText.substring(0, 300)}`);
+        // 1. Autenticar via POST /login
+        const loginUrl = `${apiBase}/login`;
+        console.log(`Chamando login: ${loginUrl}`);
+        const loginResponse = await fetch(loginUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: adminUser, password: adminPassword })
+        });
+        const loginText = await loginResponse.text();
+        console.log(`Login response status: ${loginResponse.status}, body: ${loginText.substring(0, 300)}`);
         
         let token = '';
         try {
-          const infoData = JSON.parse(infoText);
-          token = infoData.token || infoData.data?.token || '';
-          if (!token && infoData.user_info?.token) token = infoData.user_info.token;
-          // Tentar extrair token de qualquer campo
-          if (!token) {
-            const tokenMatch = infoText.match(/"token"\s*:\s*"([^"]+)"/);
-            if (tokenMatch) token = tokenMatch[1];
-          }
+          const loginData = JSON.parse(loginText);
+          token = loginData.token || loginData.access_token || loginData.data?.token || '';
         } catch (e) {
-          console.error('Erro ao parsear info response:', e);
-          throw new Error(`API info não retornou JSON válido: ${infoText.substring(0, 100)}`);
+          console.error('Erro ao parsear login response:', e);
+        }
+
+        // Se login não funcionou, tentar GET /info com headers
+        if (!token) {
+          console.log('Tentando autenticação alternativa via /info com headers...');
+          const infoResponse = await fetch(`${apiBase}/info`, {
+            headers: {
+              'Authorization': `Basic ${btoa(`${adminUser}:${adminPassword}`)}`,
+              'x-api-key': adminPassword,
+              'Content-Type': 'application/json'
+            }
+          });
+          const infoText = await infoResponse.text();
+          console.log(`Info response status: ${infoResponse.status}, body: ${infoText.substring(0, 300)}`);
+          
+          try {
+            const infoData = JSON.parse(infoText);
+            token = infoData.token || infoData.access_token || infoData.data?.token || '';
+          } catch (e) {
+            console.error('Erro ao parsear info response:', e);
+          }
         }
 
         if (!token) {
-          throw new Error(`Token não encontrado na resposta do /info: ${infoText.substring(0, 200)}`);
+          throw new Error(`Falha na autenticação com o painel. Verifique usuário e senha admin.`);
         }
         console.log(`Token obtido: ${token.substring(0, 8)}...`);
 
+        // Headers de autenticação para todas as chamadas
+        const authHeaders = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        };
+
         // 2. Buscar usuário na lista para encontrar o ID interno
-        const listUrl = `${apiBase}/list?username=${encodeURIComponent(adminUser)}&password=${encodeURIComponent(adminPassword)}&token=${encodeURIComponent(token)}&limit=100&page=1&orderBy=id&order=desc&search=${encodeURIComponent(username)}`;
+        const listUrl = `${apiBase}/list?limit=100&page=1&orderBy=id&order=desc&search=${encodeURIComponent(username)}`;
         console.log(`Buscando usuário ${username} na lista...`);
-        const listResponse = await fetch(listUrl);
+        const listResponse = await fetch(listUrl, { headers: authHeaders });
         const listText = await listResponse.text();
         console.log(`List response status: ${listResponse.status}, body: ${listText.substring(0, 500)}`);
 
@@ -164,9 +187,9 @@ serve(async (req) => {
         }
 
         // 3. Chamar PUT /extend/{userId} para renovar
-        const extendUrl = `${apiBase}/extend/${internalUserId}?username=${encodeURIComponent(adminUser)}&password=${encodeURIComponent(adminPassword)}&token=${encodeURIComponent(token)}`;
+        const extendUrl = `${apiBase}/extend/${internalUserId}`;
         console.log(`Chamando PUT extend para usuário ID ${internalUserId}...`);
-        const extendResponse = await fetch(extendUrl, { method: 'PUT' });
+        const extendResponse = await fetch(extendUrl, { method: 'PUT', headers: authHeaders });
         const extendText = await extendResponse.text();
         console.log(`Extend response status: ${extendResponse.status}, body: ${extendText.substring(0, 300)}`);
 
