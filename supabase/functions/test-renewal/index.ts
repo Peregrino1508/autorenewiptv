@@ -11,57 +11,32 @@ serve(async (req) => {
   try {
     const token = "7222a544a4eddc1fadcfb1fa679fa2fb";
     const apiBase = "https://api-new.paineloffice.click/p2p";
-    const username = "39975095";
+    const userId = "20555";
     const authHeaders = {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     };
     const results: any[] = [];
 
-    // Step 1: Search for user in list
-    const listUrl = `${apiBase}/list?limit=100&page=1&orderBy=id&order=desc&search=${encodeURIComponent(username)}`;
-    const listRes = await fetch(listUrl, { headers: authHeaders });
-    const listText = await listRes.text();
-    results.push({ step: '1-list', status: listRes.status, body: listText.substring(0, 800) });
+    // Test various body payloads for PUT /extend
+    const payloads = [
+      { name: 'days:30', body: { days: 30 } },
+      { name: 'duration:30', body: { duration: 30 } },
+      { name: 'months:1', body: { months: 1 } },
+      { name: 'exp_date+days', body: { exp_date: "2026-05-08T23:59:59.999Z", days: 30 } },
+      { name: 'package+days', body: { package: "5da17892133a1d61888029aa", days: 30 } },
+      { name: 'period:30d', body: { period: "30d" } },
+      { name: 'time:30', body: { time: 30 } },
+    ];
 
-    // Try to find user ID
-    let internalUserId: string | null = null;
-    try {
-      const listData = JSON.parse(listText);
-      const users = listData.items || listData.data || listData.users || listData.rows || listData;
-      if (Array.isArray(users)) {
-        const found = users.find((u: any) =>
-          String(u.username) === String(username) ||
-          String(u.password) === String(username) ||
-          String(u.token) === String(username)
-        );
-        if (found) {
-          internalUserId = String(found.id);
-          results.push({ step: '2-found-user', id: internalUserId, user: JSON.stringify(found).substring(0, 300) });
-        } else {
-          results.push({ step: '2-not-found', usersCount: users.length, firstUser: users[0] ? JSON.stringify(users[0]).substring(0, 200) : 'none' });
-        }
-      }
-    } catch (e) {
-      results.push({ step: '2-parse-error', error: e.message });
-    }
-
-    if (internalUserId) {
-      // Step 3: Try PUT /extend/{id}
-      const extendUrl = `${apiBase}/extend/${internalUserId}`;
-      const extRes = await fetch(extendUrl, { method: 'PUT', headers: authHeaders });
-      const extText = await extRes.text();
-      results.push({ step: '3-extend-PUT', status: extRes.status, body: extText.substring(0, 300) });
-
-      // Step 4: Also try PATCH /extend/{id}
-      const extRes2 = await fetch(extendUrl, { method: 'PATCH', headers: authHeaders });
-      const extText2 = await extRes2.text();
-      results.push({ step: '4-extend-PATCH', status: extRes2.status, body: extText2.substring(0, 300) });
-
-      // Step 5: Try POST /extend/{id}
-      const extRes3 = await fetch(extendUrl, { method: 'POST', headers: authHeaders });
-      const extText3 = await extRes3.text();
-      results.push({ step: '5-extend-POST', status: extRes3.status, body: extText3.substring(0, 300) });
+    for (const p of payloads) {
+      const r = await fetch(`${apiBase}/extend/${userId}`, {
+        method: 'PUT',
+        headers: authHeaders,
+        body: JSON.stringify(p.body)
+      });
+      const t = await r.text();
+      results.push({ test: p.name, status: r.status, body: t.substring(0, 300) });
     }
 
     return new Response(JSON.stringify(results, null, 2), {
