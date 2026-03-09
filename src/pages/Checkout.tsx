@@ -18,57 +18,57 @@ export default function Checkout() {
     iptv_username: userParam || "",
     customer_email: "",
     customer_name: "",
-    plan_id: "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [registeredUser, setRegisteredUser] = useState<any>(null);
 
-  // Fetch registered user data if user param exists
-  const { data: userData } = useQuery({
-    queryKey: ["registered-user", userParam],
-    queryFn: async () => {
-      if (!userParam) return null;
+  // Function to search for user
+  const searchUser = async (username: string) => {
+    if (!username.trim()) {
+      setRegisteredUser(null);
+      return;
+    }
+
+    try {
       const { data, error } = await supabase
         .from("iptv_users")
         .select("*")
-        .eq("username", userParam)
+        .eq("username", username.trim())
         .eq("is_active", true)
         .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!userParam,
-  });
 
-  // Update form data when registered user is loaded
-  useEffect(() => {
-    if (userData) {
-      setRegisteredUser(userData);
+      if (error || !data) {
+        setRegisteredUser(null);
+        return;
+      }
+
+      setRegisteredUser(data);
       setFormData(prev => ({
         ...prev,
-        iptv_username: userData.username,
-        customer_email: userData.customer_email || "",
-        customer_name: userData.customer_name || "",
+        customer_email: data.customer_email || "",
+        customer_name: data.customer_name || "",
       }));
+    } catch (error) {
+      setRegisteredUser(null);
     }
-  }, [userData]);
+  };
 
-  const { data: plans } = useQuery({
-    queryKey: ["active-plans"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("plans")
-        .select("*")
-        .eq("is_active", true)
-        .order("price", { ascending: true });
-      if (error) throw error;
-      if (data && data.length > 0 && !formData.plan_id) {
-        setFormData(prev => ({ ...prev, plan_id: data[0].id }));
-      }
-      return data;
-    },
-  });
+  // Debounced search when username changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchUser(formData.iptv_username);
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.iptv_username]);
+
+  // Initial search if user param exists
+  useEffect(() => {
+    if (userParam) {
+      searchUser(userParam);
+    }
+  }, [userParam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
