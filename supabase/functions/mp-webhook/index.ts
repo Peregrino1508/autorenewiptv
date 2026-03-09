@@ -130,11 +130,11 @@ serve(async (req) => {
         }
 
         // Se houver uma URL customizada de renovação, tentamos acessá-la
+        let customRenewalStatus: number | null = null;
         if (panel.renewal_url) {
           console.log(`Acessando URL customizada de renovação: ${panel.renewal_url}`);
           try {
             const customUrl = new URL(panel.renewal_url);
-            // Adicionar o username como parâmetro se não existir, ou usar a URL exatamente como fornecida
             const urlToFetch = customUrl.toString();
             
             // Vamos passar o cookie se o login retornou no header (painéis web)
@@ -145,6 +145,7 @@ serve(async (req) => {
             }
 
             const customResponse = await fetch(urlToFetch, { headers });
+            customRenewalStatus = customResponse.status;
             console.log(`Resposta da URL customizada: ${customResponse.status}`);
           } catch (customUrlErr) {
             console.error('Erro ao acessar URL customizada:', customUrlErr);
@@ -172,12 +173,13 @@ serve(async (req) => {
           // Não falhamos aqui se a URL customizada possivelmente já fez o trabalho
         }
 
-        // Marcar renovação como sucesso (a chamada real de update depende da versão do XUI)
+        // Marcar renovação como pendente de verificação manual
+        // A URL customizada foi acessada mas não temos confirmação que a renovação foi efetiva
         await supabase
           .from('payments')
           .update({
-            renewal_status: 'success',
-            renewal_message: `Processo de renovação finalizado. URL customizada acessada.`,
+            renewal_status: 'manual_check',
+            renewal_message: `URL customizada acessada (status ${customRenewalStatus || 'N/A'}). Verificar manualmente se o usuário ${username} foi renovado no painel.`,
           })
           .eq('id', externalReference);
 
