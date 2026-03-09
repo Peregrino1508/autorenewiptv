@@ -12,8 +12,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, Tv } from 'lucide-react';
 
 const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  email: z.string().email('Por favor, insira um email válido'),
+  password: z.string().min(6, 'A senha deve conter pelo menos 6 caracteres'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
