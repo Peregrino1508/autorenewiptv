@@ -138,10 +138,11 @@ export function IptvUsersManager() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const { plan_id, ...rest } = formData;
     const userData = editingUser 
-      ? { ...formData, id: editingUser.id }
-      : formData;
-    saveUser.mutate(userData);
+      ? { ...rest, plan_id: plan_id || null, id: editingUser.id }
+      : { ...rest, plan_id: plan_id || null };
+    saveUser.mutate(userData as any);
   };
 
   const copyCheckoutLink = (username: string) => {
