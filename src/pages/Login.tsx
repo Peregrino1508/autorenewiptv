@@ -130,7 +130,7 @@ const Login = () => {
               />
 
               {error && (
-                <Alert className="border-red-400/40 bg-red-50/80 text-red-700 text-lg">
+                <Alert className="border-red-400/40 bg-red-50/80 text-red-700 text-xl">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
