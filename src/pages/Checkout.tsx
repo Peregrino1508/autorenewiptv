@@ -73,8 +73,8 @@ export default function Checkout() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.iptv_username || (!registeredUser && !formData.plan_id)) {
-      toast({ title: "Erro", description: "Preencha os campos obrigatórios", variant: "destructive" });
+    if (!formData.iptv_username || !registeredUser) {
+      toast({ title: "Erro", description: "Digite um usuário válido cadastrado no sistema", variant: "destructive" });
       return;
     }
 
