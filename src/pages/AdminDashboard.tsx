@@ -5,6 +5,7 @@ import { PanelsManager } from "@/components/admin/PanelsManager";
 import { PlansManager } from "@/components/admin/PlansManager";
 import { PaymentsViewer } from "@/components/admin/PaymentsViewer";
 import { SettingsManager } from "@/components/admin/SettingsManager";
+import { IptvUsersManager } from "@/components/admin/IptvUsersManager";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -134,13 +135,20 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="panels" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-white/10 rounded-lg p-1">
+              <TabsList className="grid w-full grid-cols-5 bg-white/10 rounded-lg p-1">
                 <TabsTrigger 
                   value="panels" 
                   className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
                 >
                   <Users className="w-4 h-4 mr-2" />
                   Painéis
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="users" 
+                  className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Usuários
                 </TabsTrigger>
                 <TabsTrigger 
                   value="plans" 
@@ -165,13 +173,17 @@ const AdminDashboard = () => {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="panels" className="mt-6">
-                <PanelsManager />
-              </TabsContent>
+          <TabsContent value="panels" className="mt-6">
+            <PanelsManager />
+          </TabsContent>
 
-              <TabsContent value="plans" className="mt-6">
-                <PlansManager />
-              </TabsContent>
+          <TabsContent value="users" className="mt-6">
+            <IptvUsersManager />
+          </TabsContent>
+
+          <TabsContent value="plans" className="mt-6">
+            <PlansManager />
+          </TabsContent>
 
               <TabsContent value="payments" className="mt-6">
                 <PaymentsViewer />

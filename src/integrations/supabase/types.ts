@@ -53,6 +53,42 @@ export type Database = {
         }
         Relationships: []
       }
+      iptv_users: {
+        Row: {
+          amount_due: number
+          created_at: string
+          created_by: string | null
+          customer_email: string | null
+          customer_name: string | null
+          id: string
+          is_active: boolean
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          amount_due: number
+          created_at?: string
+          created_by?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          amount_due?: number
+          created_at?: string
+          created_by?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
