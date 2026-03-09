@@ -65,6 +65,7 @@ export type Database = {
           customer_name: string | null
           id: string
           is_active: boolean
+          plan_id: string | null
           updated_at: string
           username: string
         }
@@ -76,6 +77,7 @@ export type Database = {
           customer_name?: string | null
           id?: string
           is_active?: boolean
+          plan_id?: string | null
           updated_at?: string
           username: string
         }
@@ -87,10 +89,19 @@ export type Database = {
           customer_name?: string | null
           id?: string
           is_active?: boolean
+          plan_id?: string | null
           updated_at?: string
           username?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "iptv_users_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_statements: {
         Row: {

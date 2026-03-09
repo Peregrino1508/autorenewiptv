@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Edit, Trash2, User, Copy, ExternalLink } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
-type IptvUser = Tables<"iptv_users">;
+type IptvUser = Tables<"iptv_users"> & { plan_id?: string | null };
 
 export function IptvUsersManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -24,6 +25,7 @@ export function IptvUsersManager() {
     customer_name: "",
     customer_email: "",
     is_active: true,
+    plan_id: "" as string,
   });
 
   const { data: users, isLoading } = useQuery({
@@ -34,6 +36,19 @@ export function IptvUsersManager() {
         .select("*")
         .order("created_at", { ascending: false });
       
+      if (error) throw error;
+      return data as IptvUser[];
+    },
+  });
+
+  const { data: plans } = useQuery({
+    queryKey: ["iptv-plans"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("plans")
+        .select("*")
+        .eq("is_active", true)
+        .order("price", { ascending: true });
       if (error) throw error;
       return data;
     },
@@ -103,6 +118,7 @@ export function IptvUsersManager() {
       customer_name: "",
       customer_email: "",
       is_active: true,
+      plan_id: "",
     });
     setEditingUser(null);
   };
@@ -114,6 +130,7 @@ export function IptvUsersManager() {
       customer_name: user.customer_name || "",
       customer_email: user.customer_email || "",
       is_active: user.is_active,
+      plan_id: user.plan_id || "",
     });
     setEditingUser(user);
     setIsDialogOpen(true);
@@ -121,10 +138,11 @@ export function IptvUsersManager() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const { plan_id, ...rest } = formData;
     const userData = editingUser 
-      ? { ...formData, id: editingUser.id }
-      : formData;
-    saveUser.mutate(userData);
+      ? { ...rest, plan_id: plan_id || null, id: editingUser.id }
+      : { ...rest, plan_id: plan_id || null };
+    saveUser.mutate(userData as any);
   };
 
   const copyCheckoutLink = (username: string) => {
@@ -185,6 +203,25 @@ export function IptvUsersManager() {
                   required
                 />
               </div>
+
+              <div>
+                <Label htmlFor="plan_id" className="text-slate-300">Plano de Renovação *</Label>
+                <Select
+                  value={formData.plan_id}
+                  onValueChange={(value) => setFormData({ ...formData, plan_id: value })}
+                >
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                    <SelectValue placeholder="Selecione um plano" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    {plans?.map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id} className="text-white">
+                        {plan.name} - {plan.duration_days} dias - R$ {Number(plan.price).toFixed(2)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               
               <div>
                 <Label htmlFor="customer_name" className="text-slate-300">Nome do Cliente</Label>
@@ -241,6 +278,11 @@ export function IptvUsersManager() {
             <CardContent className="space-y-4">
               <div className="text-center">
                 <span className="text-3xl font-bold text-green-400">R$ {Number(user.amount_due).toFixed(2)}</span>
+                {user.plan_id && plans && (
+                  <div className="text-xs text-blue-400 mt-1">
+                    {plans.find(p => p.id === user.plan_id)?.name || 'Plano vinculado'} — {plans.find(p => p.id === user.plan_id)?.duration_days || '?'} dias
+                  </div>
+                )}
               </div>
               
               {user.customer_name && (
