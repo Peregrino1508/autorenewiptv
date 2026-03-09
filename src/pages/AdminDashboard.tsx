@@ -156,38 +156,45 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="panels" className="w-full">
-              <TabsList className="grid w-full grid-cols-5 bg-white/10 rounded-lg p-1">
+              <TabsList className="flex flex-wrap w-full bg-white/10 rounded-lg p-1 gap-1">
                 <TabsTrigger 
                   value="panels" 
-                  className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
                 >
                   <Users className="w-4 h-4 mr-2" />
                   Painéis
                 </TabsTrigger>
                 <TabsTrigger 
                   value="users" 
-                  className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
                 >
                   <Users className="w-4 h-4 mr-2" />
                   Usuários
                 </TabsTrigger>
                 <TabsTrigger 
                   value="plans" 
-                  className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
                 >
                   <Package className="w-4 h-4 mr-2" />
                   Planos
                 </TabsTrigger>
                 <TabsTrigger 
                   value="payments" 
-                  className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
                 >
                   <CreditCard className="w-4 h-4 mr-2" />
                   Pagamentos
                 </TabsTrigger>
                 <TabsTrigger 
+                  value="financial" 
+                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Extratos
+                </TabsTrigger>
+                <TabsTrigger 
                   value="settings" 
-                  className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
                 >
                   <Settings className="w-4 h-4 mr-2" />
                   Configurações
