@@ -44,30 +44,17 @@ serve(async (req) => {
     if (panelError || !panel) throw new Error('Painel não encontrado');
 
     const adminUser = panel.admin_user;
-    const adminPassword = panel.admin_password;
+    const adminPassword = panel.admin_password; // This is the API token/Bearer token
     const apiBase = panel.url.replace(/\/+$/, '');
     const apiRoot = apiBase.replace(/\/(p2p|iptv|nexus|red-club)$/i, '');
 
-    // 1. Login
-    console.log(`Autenticando para criar teste ${system_type}...`);
-    const loginResponse = await fetch(`${apiRoot}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: adminUser, password: adminPassword })
-    });
-    const loginData = await loginResponse.json();
-
-    if (!loginData.auth || !loginData.token) {
-      throw new Error(`Falha no login: ${JSON.stringify(loginData).substring(0, 200)}`);
-    }
-
-    const authToken = loginData.token;
+    // Use admin_password directly as Bearer token (it's the API token)
+    const authToken = adminPassword;
     const authQs = `token=${encodeURIComponent(authToken)}&password=${encodeURIComponent(adminPassword)}&username=${encodeURIComponent(adminUser)}`;
 
-    // 2. Create trial user based on system type
+    // Create trial user based on system type
     let createUrl: string;
     let createBody: Record<string, unknown>;
-
     const trialNotes = notes || 'teste-auto';
 
     switch (system_type.toLowerCase()) {
@@ -97,7 +84,10 @@ serve(async (req) => {
     console.log(`Criando teste ${system_type} via POST ${createUrl.split('?')[0]}...`);
     const createResponse = await fetch(createUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
       body: JSON.stringify(createBody)
     });
 
