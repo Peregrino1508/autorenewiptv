@@ -11,21 +11,27 @@ serve(async (req) => {
   try {
     const token = "7222a544a4eddc1fadcfb1fa679fa2fb";
     const authHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-
-    // Get swagger JSON
-    const paths = [
-      'https://api-new.paineloffice.click/api-docs/swagger.json',
-      'https://api-new.paineloffice.click/api-docs-json',
-      'https://api-new.paineloffice.click/swagger.json',
-      'https://api-new.paineloffice.click/api-docs/v1/swagger.json',
-    ];
     const results: any[] = [];
 
-    for (const url of paths) {
+    // Get Swagger JSON for schema details
+    const swaggerPaths = [
+      'https://api-new.paineloffice.click/api-docs-json',
+      'https://api-new.paineloffice.click/api-docs/swagger.json',
+      'https://api-new.paineloffice.click/swagger-json',
+    ];
+    for (const url of swaggerPaths) {
       const r = await fetch(url, { headers: authHeaders });
       const t = await r.text();
-      results.push({ url, status: r.status, body: t.substring(0, 2000) });
+      results.push({ url, status: r.status, body: t.substring(0, 5000) });
     }
+
+    // Also test POST /auth/login (the correct login endpoint from docs!)
+    const loginRes = await fetch('https://api-new.paineloffice.click/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'Robsonamorim', password: 'vitoriadaluz' })
+    });
+    results.push({ test: 'POST /auth/login', status: loginRes.status, body: (await loginRes.text()).substring(0, 500) });
 
     return new Response(JSON.stringify(results, null, 2), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
