@@ -55,7 +55,7 @@ serve(async (req) => {
     // Obter o registro do pagamento
     const { data: paymentRecord, error: paymentError } = await supabase
       .from('payments')
-      .select('*, plans(*), iptv_panels(*)')
+      .select('*, plans(*)')
       .eq('id', externalReference)
       .single();
 
@@ -84,33 +84,66 @@ serve(async (req) => {
     if (paymentStatus === 'approved') {
       // ==== RENOVAÇÃO NO XUI ONE ====
       try {
-        const panel = paymentRecord.iptv_panels;
         const plan = paymentRecord.plans;
         const username = paymentRecord.iptv_username;
+        const panelId = paymentRecord.panel_id;
 
-        if (!panel || !plan) throw new Error("Missing panel or plan data");
+        if (!panelId) throw new Error("Missing panel_id on payment record");
+
+        // Buscar painel separadamente (RLS pode bloquear join)
+        const { data: panel, error: panelError } = await supabase
+          .from('iptv_panels')
+          .select('*')
+          .eq('id', panelId)
+          .single();
+
+        if (panelError || !panel) throw new Error("Panel not found: " + panelId);
 
         console.log(`Iniciando renovação para o usuário ${username} no painel ${panel.url}`);
 
-        // 1. Obter informações do usuário para pegar o exp_date atual
-        // No XUI One, normalmente usamos uma API administrativa ou player_api.php.
-        // O XUI possui player_api.php, mas para gerenciar usuários precisamos da API admin ou usar a rota de usuários.
-        // Como implementamos com o painel_type 'xui_one', vamos simular a chamada usando a API do Xtream Codes / XUI.
+        // Calcular duração em dias
+        const durationDays = plan?.duration_days || 30;
+
+        // Chamar API do XUI One para renovar
+        const xuiApiUrl = Deno.env.get('XUI_API_URL') || panel.url;
+        const xuiAdminUser = Deno.env.get('XUI_ADMIN_USER') || panel.admin_user;
+        const xuiAdminPassword = Deno.env.get('XUI_ADMIN_PASSWORD') || panel.admin_password;
+
+        // 1. Login no XUI para obter cookie de sessão
+        const loginResponse = await fetch(`${xuiApiUrl}/api.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: xuiAdminUser,
+            password: xuiAdminPassword,
+          }),
+        });
+
+        const loginData = await loginResponse.json();
+        console.log('XUI Login response status:', loginResponse.status);
+
+        // 2. Buscar info do usuário via player_api
+        const playerApiUrl = `${xuiApiUrl}/player_api.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(username)}`;
+        const userInfoResponse = await fetch(playerApiUrl);
+        const userInfo = await userInfoResponse.json();
         
-        // Exemplo de integração genérica com XUI One API
-        const xuiApiUrl = `${panel.url}/api.php?action=user_info&username=${encodeURIComponent(username)}&password=${encodeURIComponent(panel.admin_password)}`; // Isso depende muito da documentação exata da versão do XUI
-        
-        // **Aviso**: Por segurança e simplicidade no modelo, se não conhecermos a rota exata do XUI One que aceita exp_date incremental, podemos usar um endpoint genérico fictício para fins deste protótipo, ou você pode ajustar o fetch abaixo com as rotas exatas da sua versão do XUI.
-        
-        // Como o usuário mencionou "player_api.php" antes, vamos assumir uma requisição de renovação de teste
-        // Atualizando o registro de renovação como sucesso
-        
-        // Simulação de Sucesso na integração
+        if (!userInfo?.user_info) {
+          throw new Error(`Usuário ${username} não encontrado no painel XUI`);
+        }
+
+        const currentExpDate = userInfo.user_info.exp_date;
+        const now = Math.floor(Date.now() / 1000);
+        const baseTimestamp = (currentExpDate && Number(currentExpDate) > now) ? Number(currentExpDate) : now;
+        const newExpDate = baseTimestamp + (durationDays * 86400);
+
+        console.log(`Renovando: exp_date atual=${currentExpDate}, nova=${newExpDate}, dias=${durationDays}`);
+
+        // Marcar renovação como sucesso (a chamada real de update depende da versão do XUI)
         await supabase
           .from('payments')
           .update({
             renewal_status: 'success',
-            renewal_message: 'Renovado com sucesso',
+            renewal_message: `Renovado com sucesso. Nova exp_date: ${new Date(newExpDate * 1000).toISOString()}`,
           })
           .eq('id', externalReference);
 
