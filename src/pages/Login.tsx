@@ -74,7 +74,7 @@ const Login = () => {
           <p className="text-slate-700 text-xl">Portal Administrativo R6TV</p>
         </CardHeader>
         
-        <CardContent className="space-y-16 px-20 pb-24">
+        <CardContent className="space-y-16 px-12 pb-24">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
               <FormField
