@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Mail, User, ShieldCheck } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { Mail, User, ShieldCheck, ArrowLeft } from "lucide-react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const status = searchParams.get("status");
   const userParam = searchParams.get("user");
   
@@ -21,6 +23,23 @@ export default function Checkout() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [registeredUser, setRegisteredUser] = useState<any>(null);
+
+  // Check if current user is admin
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      
+      const { data } = await supabase.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin'
+      });
+      
+      return data || false;
+    },
+  });
+
 
   // Function to search for user
   const searchUser = async (username: string) => {
@@ -137,7 +156,18 @@ export default function Checkout() {
 
   return (
     <div className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))] flex flex-col items-center justify-center p-4">
-      <div className="text-center mb-8">
+      <div className="text-center mb-8 relative">
+        {/* Admin Back Button */}
+        {isAdmin && (
+          <Button
+            onClick={() => navigate('/admin')}
+            variant="ghost"
+            className="absolute left-0 top-0 text-slate-400 hover:text-white"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar ao Admin
+          </Button>
+        )}
         <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 mb-2">
           Renove seu IPTV
         </h1>
