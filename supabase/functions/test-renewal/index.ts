@@ -9,49 +9,24 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const results: any[] = [];
-
-    // Login first to get fresh token
-    const loginRes = await fetch('https://api-new.paineloffice.click/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'Robsonamorim', password: 'vitoriadaluz' })
+    // Get full swagger JSON and extract P2P schemas
+    const r = await fetch('https://api-new.paineloffice.click/api-docs-json', {
+      headers: { 'Authorization': 'Bearer 7222a544a4eddc1fadcfb1fa679fa2fb' }
     });
-    const loginData = JSON.parse(await loginRes.text());
-    const token = loginData.token;
+    const swagger = await r.json();
+    
+    // Extract P2P extend path and schemas
+    const p2pExtend = swagger.paths?.['/p2p/extend/{id}'];
+    const schemas = swagger.components?.schemas;
+    const updateP2P = schemas?.UpdateUserP2PDto;
+    const createP2P = schemas?.CreateUserP2PDto;
 
-    const userId = "20555";
-    // Use raw credentials in query params (this passed auth!)
-    const qs = `token=${encodeURIComponent(token)}&password=vitoriadaluz&username=Robsonamorim`;
-
-    // The UpdateUserP2PDto likely needs package/exp_date/type fields
-    // Test various body payloads
-    const payloads = [
-      { name: 'package only', body: { package: "5da17892133a1d61888029aa" } },
-      { name: 'type:renewal', body: { type: "renewal" } },
-      { name: 'type:extend', body: { type: "extend" } },
-      { name: 'type:renew', body: { type: "renew" } },
-      { name: 'type:official', body: { type: "official" } },
-      { name: 'package+type', body: { package: "5da17892133a1d61888029aa", type: "renewal" } },
-      { name: 'package+exp', body: { package: "5da17892133a1d61888029aa", exp_date: "2026-05-08T23:59:59.999Z" } },
-      { name: 'package+type+exp', body: { package: "5da17892133a1d61888029aa", type: "renewal", exp_date: "2026-05-08T23:59:59.999Z" } },
-      { name: 'id_res', body: { id_res: "4556" } },
-      { name: 'pack+idres', body: { package: "5da17892133a1d61888029aa", id_res: "4556" } },
-    ];
-
-    for (const p of payloads) {
-      const r = await fetch(`https://api-new.paineloffice.click/p2p/extend/${userId}?${qs}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(p.body)
-      });
-      const t = await r.text();
-      results.push({ test: p.name, status: r.status, body: t.substring(0, 300) });
-      // If we get a different response, stop
-      if (!t.includes('missing field')) break;
-    }
-
-    return new Response(JSON.stringify(results, null, 2), {
+    return new Response(JSON.stringify({
+      p2pExtend,
+      UpdateUserP2PDto: updateP2P,
+      CreateUserP2PDto: createP2P,
+      allSchemaNames: schemas ? Object.keys(schemas) : [],
+    }, null, 2), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
