@@ -40,6 +40,22 @@ export default function Checkout() {
     },
   });
 
+  // Get current active plan price
+  const { data: currentPlan } = useQuery({
+    queryKey: ["current-plan"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("plans")
+        .select("*")
+        .eq("is_active", true)
+        .limit(1)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
 
   // Function to search for user
   const searchUser = async (username: string) => {
