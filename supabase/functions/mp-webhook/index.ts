@@ -100,8 +100,8 @@ serve(async (req) => {
 
         const adminUser = panel.admin_user;
         const adminPassword = panel.admin_password;
-        // A API real fica em api-new.paineloffice.click, extrair do panel.url ou renewal_url
-        const apiBase = 'https://api-new.paineloffice.click/p2p';
+        // Usar a URL configurada no painel como base da API
+        const apiBase = panel.url.replace(/\/+$/, ''); // remover trailing slash
 
         console.log(`Iniciando renovação para usuário ${username} via API ${apiBase}`);
 

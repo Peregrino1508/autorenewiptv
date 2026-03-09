@@ -27,7 +27,6 @@ export function PanelsManager() {
     panel_type: "xui_one",
     is_active: true,
     notes: "",
-    renewal_url: "",
   });
 
   // Fetch panels
@@ -112,7 +111,6 @@ export function PanelsManager() {
       panel_type: "xui_one",
       is_active: true,
       notes: "",
-      renewal_url: "",
     });
     setEditingPanel(null);
   };
@@ -126,7 +124,6 @@ export function PanelsManager() {
       panel_type: panel.panel_type,
       is_active: panel.is_active,
       notes: panel.notes || "",
-      renewal_url: (panel as any).renewal_url || "",
     });
     setEditingPanel(panel);
     setIsDialogOpen(true);
@@ -174,28 +171,19 @@ export function PanelsManager() {
               </div>
               
               <div>
-                <Label htmlFor="url">URL do Painel</Label>
+                <Label htmlFor="url">API do Sistema de Renovação Automática</Label>
                 <Input
                   id="url"
                   type="url"
                   value={formData.url}
                   onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                   className="bg-white/10 border-white/20 text-white"
-                  placeholder="https://painel.exemplo.com"
+                  placeholder="https://api-new.paineloffice.click/p2p"
                   required
                 />
-              </div>
-              
-              <div>
-                <Label htmlFor="renewal_url">URL de Renovação Customizada (Opcional)</Label>
-                <Input
-                  id="renewal_url"
-                  type="url"
-                  value={formData.renewal_url}
-                  onChange={(e) => setFormData({ ...formData, renewal_url: e.target.value })}
-                  className="bg-white/10 border-white/20 text-white"
-                  placeholder="https://painel.ai/users?users=P2P&page=1"
-                />
+                <p className="text-xs text-slate-400 mt-1">
+                  Cole aqui a URL base da API do seu painel (ex: https://api-new.paineloffice.click/p2p)
+                </p>
               </div>
               
               <div>
@@ -270,7 +258,7 @@ export function PanelsManager() {
             <CardContent>
               <div className="space-y-2 text-sm">
                 <p className="text-slate-300">
-                  <span className="font-medium">URL:</span> {panel.url}
+                  <span className="font-medium">API:</span> {panel.url}
                 </p>
                 <p className="text-slate-300">
                   <span className="font-medium">Admin:</span> {panel.admin_user}
