@@ -62,7 +62,7 @@ const Login = () => {
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#3b82f630_1px,transparent_1px),linear-gradient(to_bottom,#8b5cf630_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] animate-pulse" />
       
       <Card className="w-full max-w-6xl relative z-10 bg-white/60 backdrop-blur-lg border-white/40 shadow-2xl shadow-purple-500/30">
-        <CardHeader className="space-y-12 text-center py-16">
+        <CardHeader className="space-y-16 text-center py-24">
           <div className="flex items-center justify-center space-x-4">
             <div className="p-6 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full">
               <Tv className="w-16 h-16 text-blue-600" />
@@ -74,9 +74,9 @@ const Login = () => {
           <p className="text-slate-700 text-xl">Acesse o painel administrativo</p>
         </CardHeader>
         
-        <CardContent className="space-y-12 px-16 pb-16">
+        <CardContent className="space-y-16 px-20 pb-24">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
               <FormField
                 control={form.control}
                 name="email"
