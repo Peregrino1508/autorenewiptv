@@ -54,6 +54,7 @@ serve(async (req) => {
         throw new Error('Nenhum plano ativo encontrado');
       }
 
+      planData = activePlan;
       amount = Number(activePlan.price);
       paymentDescription = `Renovação IPTV - ${activePlan.name} - Usuário: ${iptv_username} - Valor: R$ ${amount.toFixed(2)}`;
       

@@ -55,7 +55,7 @@ serve(async (req) => {
     // Obter o registro do pagamento
     const { data: paymentRecord, error: paymentError } = await supabase
       .from('payments')
-      .select('*, plans(*), iptv_panels(*)')
+      .select('*, plans(*)')
       .eq('id', externalReference)
       .single();
 
