@@ -82,11 +82,11 @@ serve(async (req) => {
     }
 
     console.log(`Criando teste ${system_type} via POST ${createUrl.split('?')[0]}...`);
+    console.log(`Auth params - token: ${authToken.substring(0,8)}..., username: ${adminUser}`);
     const createResponse = await fetch(createUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify(createBody)
     });
