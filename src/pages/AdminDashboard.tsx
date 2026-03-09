@@ -135,13 +135,20 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="panels" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-white/10 rounded-lg p-1">
+              <TabsList className="grid w-full grid-cols-5 bg-white/10 rounded-lg p-1">
                 <TabsTrigger 
                   value="panels" 
                   className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
                 >
                   <Users className="w-4 h-4 mr-2" />
                   Painéis
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="users" 
+                  className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Usuários
                 </TabsTrigger>
                 <TabsTrigger 
                   value="plans" 

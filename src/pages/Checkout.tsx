@@ -71,11 +71,49 @@ export default function Checkout() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.iptv_username || !formData.plan_id) {
+    if (!formData.iptv_username || (!registeredUser && !formData.plan_id)) {
       toast({ title: "Erro", description: "Preencha os campos obrigatórios", variant: "destructive" });
       return;
     }
 
+    // If it's a registered user, validate the amount
+    if (registeredUser && !formData.plan_id) {
+      // For registered users, we'll use their registered amount instead of a plan
+      setIsLoading(true);
+      try {
+        const response = await supabase.functions.invoke('create-payment', {
+          body: {
+            iptv_username: formData.iptv_username,
+            customer_email: formData.customer_email,
+            customer_name: formData.customer_name,
+            registered_user_payment: true, // Flag to indicate this is for a registered user
+          },
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message || "Erro ao criar pagamento");
+        }
+
+        if (response.data?.initPoint) {
+          window.location.href = response.data.initPoint;
+        } else {
+          throw new Error("Link de pagamento não recebido");
+        }
+
+      } catch (error: any) {
+        console.error(error);
+        toast({
+          title: "Erro ao processar",
+          description: error.message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // Regular plan-based payment
     setIsLoading(true);
     try {
       const response = await supabase.functions.invoke('create-payment', {
@@ -87,7 +125,6 @@ export default function Checkout() {
       }
 
       if (response.data?.initPoint) {
-        // Redireciona para o checkout do Mercado Pago
         window.location.href = response.data.initPoint;
       } else {
         throw new Error("Link de pagamento não recebido");
