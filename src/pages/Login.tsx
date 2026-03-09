@@ -57,7 +57,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-200 via-purple-300 to-blue-500 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-amber-300 via-purple-300 to-blue-500 flex items-center justify-center p-4">
       {/* Animated background grid */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#3b82f630_1px,transparent_1px),linear-gradient(to_bottom,#8b5cf630_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] animate-pulse" />
       
