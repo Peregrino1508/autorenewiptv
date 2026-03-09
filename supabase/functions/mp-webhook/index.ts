@@ -64,10 +64,25 @@ serve(async (req) => {
       return new Response("OK", { status: 200 }); // Retornar 200 para o MP parar de enviar o webhook
     }
 
-    // Se já estiver processado (approved), ignora
-    if (paymentRecord.status === 'approved') {
-      console.log('Payment already approved');
+    // Se já estiver processado (approved) ou renovação já iniciada, ignora
+    if (paymentRecord.status === 'approved' || paymentRecord.renewal_status === 'success' || paymentRecord.renewal_status === 'processing') {
+      console.log('Payment already processed or renewal in progress, skipping');
       return new Response("OK", { status: 200 });
+    }
+
+    // Marcar como "processing" ANTES de renovar para evitar duplicatas (race condition)
+    if (paymentInfo.status === 'approved') {
+      const { error: lockError } = await supabase
+        .from('payments')
+        .update({ renewal_status: 'processing' })
+        .eq('id', externalReference)
+        .neq('renewal_status', 'success')
+        .neq('renewal_status', 'processing');
+      
+      if (lockError) {
+        console.log('Could not lock payment, likely already being processed');
+        return new Response("OK", { status: 200 });
+      }
     }
 
     // Atualiza status do pagamento no nosso banco
