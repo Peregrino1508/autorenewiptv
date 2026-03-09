@@ -49,26 +49,41 @@ serve(async (req) => {
       }
       paymentDescription = `Renovação IPTV - Usuário: ${iptv_username} - Valor: R$ ${amount.toFixed(2)}`;
       
+      // Get the user's linked plan if available
+      if (registeredUser.plan_id) {
+        const { data: userPlan, error: planError } = await supabase
+          .from('plans')
+          .select('*')
+          .eq('id', registeredUser.plan_id)
+          .single();
+        
+        if (!planError && userPlan) {
+          planData = userPlan;
+          paymentDescription = `Renovação IPTV - ${userPlan.name} (${userPlan.duration_days} dias) - Usuário: ${iptv_username}`;
+        }
+      }
+
+      // If no plan linked, get first active plan as fallback
+      if (!planData) {
+        const { data: activePlan } = await supabase
+          .from('plans')
+          .select('*')
+          .eq('is_active', true)
+          .limit(1)
+          .single();
+        planData = activePlan;
+      }
+
       // Get the first active panel for this user
-      const { data: firstActivePanel, error: panelError } = await supabase
+      const { data: firstActivePanel, error: panelError2 } = await supabase
         .from('iptv_panels')
         .select('*')
         .eq('is_active', true)
         .limit(1)
         .single();
       
-      if (panelError) throw new Error('Nenhum painel ativo encontrado');
+      if (panelError2) throw new Error('Nenhum painel ativo encontrado');
       panelData = firstActivePanel;
-      
-      // Get plan if available (optional, for duration_days)
-      const { data: activePlan } = await supabase
-        .from('plans')
-        .select('*')
-        .eq('is_active', true)
-        .limit(1)
-        .single();
-      
-      planData = activePlan;
       
     } else {
       // Regular plan-based payment

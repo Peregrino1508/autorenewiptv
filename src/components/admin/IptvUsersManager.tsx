@@ -278,6 +278,11 @@ export function IptvUsersManager() {
             <CardContent className="space-y-4">
               <div className="text-center">
                 <span className="text-3xl font-bold text-green-400">R$ {Number(user.amount_due).toFixed(2)}</span>
+                {user.plan_id && plans && (
+                  <div className="text-xs text-blue-400 mt-1">
+                    {plans.find(p => p.id === user.plan_id)?.name || 'Plano vinculado'} — {plans.find(p => p.id === user.plan_id)?.duration_days || '?'} dias
+                  </div>
+                )}
               </div>
               
               {user.customer_name && (
