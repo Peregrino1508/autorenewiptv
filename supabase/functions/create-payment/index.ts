@@ -151,6 +151,7 @@ serve(async (req) => {
           pending: `${req.headers.get('origin') || 'http://localhost:5173'}/checkout?status=pending`,
         },
         auto_return: "approved",
+        notification_url: "https://snoiymaflwumwlbschau.supabase.co/functions/v1/mp-webhook",
       }),
     });
 
