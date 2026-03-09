@@ -6,6 +6,7 @@ import { PlansManager } from "@/components/admin/PlansManager";
 import { PaymentsViewer } from "@/components/admin/PaymentsViewer";
 import { SettingsManager } from "@/components/admin/SettingsManager";
 import { IptvUsersManager } from "@/components/admin/IptvUsersManager";
+import { CreateTrialDialog } from "@/components/admin/CreateTrialDialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -62,6 +63,7 @@ const AdminDashboard = () => {
           </div>
           
           <div className="flex gap-3">
+            <CreateTrialDialog />
             <Button
               onClick={() => navigate("/checkout")}
               variant="outline"
