@@ -205,43 +205,15 @@ export default function Checkout() {
                   />
                 </div>
               </div>
-
-              {/* Only show plan selection if not a registered user */}
-              {!registeredUser && (
-                <div className="pt-2">
-                  <Label className="text-slate-300 mb-3 block">Escolha seu plano</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {plans?.map((plan) => (
-                      <div
-                        key={plan.id}
-                        onClick={() => setFormData({ ...formData, plan_id: plan.id })}
-                        className={`cursor-pointer rounded-lg border p-4 transition-all duration-200 ${
-                          formData.plan_id === plan.id
-                            ? 'border-blue-500 bg-blue-500/10'
-                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                        }`}
-                      >
-                        <div className="font-medium text-white mb-1">{plan.name}</div>
-                        <div className="text-2xl font-bold text-blue-400">
-                          R$ {Number(plan.price).toFixed(2)}
-                        </div>
-                        <div className="text-xs text-slate-400 mt-1">
-                          {plan.duration_days} dias de acesso
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </CardContent>
           <CardFooter className="p-6 pt-0">
             <Button
               type="submit"
-              disabled={isLoading || (!registeredUser && !formData.plan_id)}
+              disabled={isLoading || !registeredUser}
               className="w-full h-12 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
             >
-              {isLoading ? "Gerando pagamento..." : `Pagar${registeredUser ? ` R$ ${Number(registeredUser.amount_due).toFixed(2)}` : ''} e Renovar Agora`}
+              {isLoading ? "Gerando pagamento..." : registeredUser ? `Pagar R$ ${Number(registeredUser.amount_due).toFixed(2)} e Renovar Agora` : 'Digite um usuário válido'}
             </Button>
           </CardFooter>
         </form>
