@@ -76,7 +76,7 @@ const Login = () => {
         
         <CardContent className="space-y-16 px-20 pb-24">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
               <FormField
                 control={form.control}
                 name="email"
