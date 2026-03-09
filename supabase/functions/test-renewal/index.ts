@@ -11,6 +11,15 @@ serve(async (req) => {
   try {
     const results: any[] = [];
 
+    // Get IPTV extend schema for comparison
+    const r = await fetch('https://api-new.paineloffice.click/api-docs-json', {
+      headers: { 'Authorization': 'Bearer 7222a544a4eddc1fadcfb1fa679fa2fb' }
+    });
+    const swagger = await r.json();
+    const iptvExtend = swagger.paths?.['/iptv/extend/{id}'];
+    const updateIptv = swagger.components?.schemas?.UpdateUserIptvDto;
+    const createP2P = swagger.paths?.['/p2p']?.post;
+
     // Login
     const loginRes = await fetch('https://api-new.paineloffice.click/auth/login', {
       method: 'POST',
@@ -21,40 +30,35 @@ serve(async (req) => {
     const token = loginData.token;
 
     const userId = "20555";
-    const qs = `token=${encodeURIComponent(token)}&password=vitoriadaluz&username=Robsonamorim`;
-    const url = `https://api-new.paineloffice.click/p2p/extend/${userId}?${qs}`;
 
-    const payloads = [
-      { name: 'tipo', body: { tipo: "oficial" } },
-      { name: 'pacote', body: { pacote: "5da17892133a1d61888029aa" } },
-      { name: 'status', body: { status: "active" } },
-      { name: 'tipo+pacote+status', body: { tipo: "oficial", pacote: "5da17892133a1d61888029aa", status: "active" } },
-      { name: 'trial:false', body: { trial: false } },
-      { name: 'trial:false+pack', body: { trial: false, package: "5da17892133a1d61888029aa" } },
-      // Maybe it's boolean "official" field
-      { name: 'official:true', body: { official: true } },
-      { name: 'test:false', body: { test: false } },
-      // Maybe the field is about the package ID
-      { name: 'packageId', body: { packageId: "5da17892133a1d61888029aa" } },
-      // Maybe it needs ALL these together
-      { name: 'all-pt', body: { tipo: "oficial", pacote: "5da17892133a1d61888029aa", status: "ativo", trial: false, package: "5da17892133a1d61888029aa" } },
-      // Maybe it expects the same fields as user schema
-      { name: 'user-like', body: { username: "39975095", password: "53825852", package: "5da17892133a1d61888029aa", trial: false, enabled: true, system: "P2P" } },
+    // Maybe the "missing field" is a query param. Try adding extra query params
+    const extraParams = [
+      'id_res=4556',
+      'package=5da17892133a1d61888029aa',
+      'type=official',
+      'system=P2P',
+      'trial=false',
+      'reseller=4556',
     ];
-
-    for (const p of payloads) {
-      const r = await fetch(url, {
+    
+    for (const extra of extraParams) {
+      const qs = `token=${encodeURIComponent(token)}&password=vitoriadaluz&username=Robsonamorim&${extra}`;
+      const r2 = await fetch(`https://api-new.paineloffice.click/p2p/extend/${userId}?${qs}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(p.body)
+        body: JSON.stringify({})
       });
-      const t = await r.text();
-      results.push({ test: p.name, status: r.status, body: t.substring(0, 300) });
+      const t = await r2.text();
+      results.push({ test: `query:${extra}`, status: r2.status, body: t.substring(0, 300) });
       if (!t.includes('missing field')) {
-        results.push({ note: 'DIFFERENT RESPONSE FOUND!' });
+        results.push({ note: 'DIFFERENT RESPONSE!' });
         break;
       }
     }
+
+    results.push({ iptvExtend: JSON.stringify(iptvExtend).substring(0, 1000) });
+    results.push({ updateIptv });
+    results.push({ createP2P: JSON.stringify(createP2P).substring(0, 1000) });
 
     return new Response(JSON.stringify(results, null, 2), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
