@@ -40,8 +40,6 @@ export default function Checkout() {
     },
   });
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [registeredUser, setRegisteredUser] = useState<any>(null);
 
   // Function to search for user
   const searchUser = async (username: string) => {
