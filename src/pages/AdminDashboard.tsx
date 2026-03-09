@@ -9,7 +9,8 @@ import { IptvUsersManager } from "@/components/admin/IptvUsersManager";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Activity, Settings, CreditCard, Package, Users, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart } from "lucide-react";
 
 const AdminDashboard = () => {
   const { signOut, user } = useAuth();
