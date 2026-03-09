@@ -42,21 +42,12 @@ serve(async (req) => {
         throw new Error('Usuário não encontrado. Verifique o número do usuário cadastrado.');
       }
 
-      // Get the current active plan price
-      const { data: activePlan, error: planError } = await supabase
-        .from('plans')
-        .select('*')
-        .eq('is_active', true)
-        .limit(1)
-        .single();
-
-      if (planError || !activePlan) {
-        throw new Error('Nenhum plano ativo encontrado');
+      // Use the amount_due from the registered user
+      amount = Number(registeredUser.amount_due);
+      if (!amount || amount <= 0) {
+        throw new Error('Valor inválido para o usuário. Verifique o cadastro.');
       }
-
-      planData = activePlan;
-      amount = Number(activePlan.price);
-      paymentDescription = `Renovação IPTV - ${activePlan.name} - Usuário: ${iptv_username} - Valor: R$ ${amount.toFixed(2)}`;
+      paymentDescription = `Renovação IPTV - Usuário: ${iptv_username} - Valor: R$ ${amount.toFixed(2)}`;
       
       // Get the first active panel for this user
       const { data: firstActivePanel, error: panelError } = await supabase
@@ -68,6 +59,16 @@ serve(async (req) => {
       
       if (panelError) throw new Error('Nenhum painel ativo encontrado');
       panelData = firstActivePanel;
+      
+      // Get plan if available (optional, for duration_days)
+      const { data: activePlan } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('is_active', true)
+        .limit(1)
+        .single();
+      
+      planData = activePlan;
       
     } else {
       // Regular plan-based payment
