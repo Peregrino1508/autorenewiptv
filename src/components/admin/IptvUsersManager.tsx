@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Edit, Trash2, User, Copy, ExternalLink } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
-type IptvUser = Tables<"iptv_users">;
+type IptvUser = Tables<"iptv_users"> & { plan_id?: string | null };
 
 export function IptvUsersManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -24,6 +25,7 @@ export function IptvUsersManager() {
     customer_name: "",
     customer_email: "",
     is_active: true,
+    plan_id: "" as string,
   });
 
   const { data: users, isLoading } = useQuery({
