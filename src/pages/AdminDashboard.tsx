@@ -63,6 +63,7 @@ const AdminDashboard = () => {
           </div>
           
           <div className="flex gap-3">
+            <CreateTrialDialog />
             <Button
               onClick={() => navigate("/checkout")}
               variant="outline"
