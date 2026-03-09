@@ -120,7 +120,7 @@ const Login = () => {
                           onClick={() => setShowPassword(!showPassword)}
                           disabled={isLoading}
                         >
-                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          {showPassword ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
                         </Button>
                       </div>
                     </FormControl>
