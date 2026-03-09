@@ -27,6 +27,7 @@ export function PanelsManager() {
     panel_type: "xui_one",
     is_active: true,
     notes: "",
+    renewal_url: "",
   });
 
   // Fetch panels
@@ -111,6 +112,7 @@ export function PanelsManager() {
       panel_type: "xui_one",
       is_active: true,
       notes: "",
+      renewal_url: "",
     });
     setEditingPanel(null);
   };
@@ -124,6 +126,7 @@ export function PanelsManager() {
       panel_type: panel.panel_type,
       is_active: panel.is_active,
       notes: panel.notes || "",
+      renewal_url: (panel as any).renewal_url || "",
     });
     setEditingPanel(panel);
     setIsDialogOpen(true);
@@ -180,6 +183,18 @@ export function PanelsManager() {
                   className="bg-white/10 border-white/20 text-white"
                   placeholder="https://painel.exemplo.com"
                   required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="renewal_url">URL de Renovação Customizada (Opcional)</Label>
+                <Input
+                  id="renewal_url"
+                  type="url"
+                  value={formData.renewal_url}
+                  onChange={(e) => setFormData({ ...formData, renewal_url: e.target.value })}
+                  className="bg-white/10 border-white/20 text-white"
+                  placeholder="https://painel.ai/users?users=P2P&page=1"
                 />
               </div>
               

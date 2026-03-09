@@ -1,0 +1,1 @@
+ALTER TABLE public.iptv_panels ADD COLUMN renewal_url TEXT;
