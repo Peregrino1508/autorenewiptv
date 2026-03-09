@@ -124,8 +124,8 @@ const AdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-sm font-medium">Pagamentos</p>
-                  <p className="text-3xl font-bold text-white">{stats?.totalPayments || 0}</p>
+                  <p className="text-slate-400 text-sm font-medium">Pagamentos do Mês</p>
+                  <p className="text-3xl font-bold text-white">{stats?.monthlyPayments || 0}</p>
                 </div>
                 <div className="p-3 bg-yellow-500/20 rounded-full">
                   <Activity className="w-6 h-6 text-yellow-400" />
@@ -138,11 +138,11 @@ const AdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-sm font-medium">Receita Total</p>
-                  <p className="text-3xl font-bold text-white">R$ {stats?.totalRevenue || '0.00'}</p>
+                  <p className="text-slate-400 text-sm font-medium">Lucro do Mês</p>
+                  <p className="text-3xl font-bold text-white">R$ {stats?.monthlyProfit || '0.00'}</p>
                 </div>
-                <div className="p-3 bg-purple-500/20 rounded-full">
-                  <CreditCard className="w-6 h-6 text-purple-400" />
+                <div className="p-3 bg-green-500/20 rounded-full">
+                  <DollarSign className="w-6 h-6 text-green-400" />
                 </div>
               </div>
             </CardContent>
