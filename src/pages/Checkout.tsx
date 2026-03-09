@@ -225,7 +225,7 @@ export default function Checkout() {
               </div>
 
               <div>
-                <Label htmlFor="customer_name" className="text-slate-300">Seu Nome {registeredUser ? '' : '(Opcional)'}</Label>
+                <Label htmlFor="customer_name" className="text-slate-300">Seu Nome</Label>
                 <div className="relative mt-1">
                   <User className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
                   <Input
