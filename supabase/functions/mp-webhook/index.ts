@@ -82,7 +82,7 @@ serve(async (req) => {
       .eq('id', externalReference);
 
     if (paymentStatus === 'approved') {
-      // ==== RENOVAÇÃO NO XUI ONE ====
+      // ==== RENOVAÇÃO VIA API DO PAINEL ====
       try {
         const plan = paymentRecord.plans;
         const username = paymentRecord.iptv_username;
@@ -90,7 +90,6 @@ serve(async (req) => {
 
         if (!panelId) throw new Error("Missing panel_id on payment record");
 
-        // Buscar painel separadamente (RLS pode bloquear join)
         const { data: panel, error: panelError } = await supabase
           .from('iptv_panels')
           .select('*')
@@ -99,92 +98,93 @@ serve(async (req) => {
 
         if (panelError || !panel) throw new Error("Panel not found: " + panelId);
 
-        console.log(`Iniciando renovação para o usuário ${username} no painel ${panel.url}`);
+        const adminUser = panel.admin_user;
+        const adminPassword = panel.admin_password;
+        // A API real fica em api-new.paineloffice.click, extrair do panel.url ou renewal_url
+        const apiBase = 'https://api-new.paineloffice.click/p2p';
 
-        // Calcular duração em dias
-        const durationDays = plan?.duration_days || 30;
+        console.log(`Iniciando renovação para usuário ${username} via API ${apiBase}`);
 
-        // Chamar API do XUI One para renovar
-        const xuiApiUrl = Deno.env.get('XUI_API_URL') || panel.url;
-        const xuiAdminUser = Deno.env.get('XUI_ADMIN_USER') || panel.admin_user;
-        const xuiAdminPassword = Deno.env.get('XUI_ADMIN_PASSWORD') || panel.admin_password;
-
-        // 1. Login no XUI para obter cookie de sessão
-        const loginResponse = await fetch(`${xuiApiUrl}/api.php`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: xuiAdminUser,
-            password: xuiAdminPassword,
-          }),
-        });
-
-        const responseText = await loginResponse.text();
-        console.log('Login raw response:', responseText.substring(0, 200));
+        // 1. Obter token via /info
+        const infoUrl = `${apiBase}/info/?username=${encodeURIComponent(adminUser)}&password=${encodeURIComponent(adminPassword)}`;
+        console.log(`Chamando info: ${apiBase}/info/?username=${adminUser}&password=***`);
+        const infoResponse = await fetch(infoUrl);
+        const infoText = await infoResponse.text();
+        console.log(`Info response status: ${infoResponse.status}, body: ${infoText.substring(0, 300)}`);
         
-        let loginData;
+        let token = '';
         try {
-          loginData = JSON.parse(responseText);
+          const infoData = JSON.parse(infoText);
+          token = infoData.token || infoData.data?.token || '';
+          if (!token && infoData.user_info?.token) token = infoData.user_info.token;
+          // Tentar extrair token de qualquer campo
+          if (!token) {
+            const tokenMatch = infoText.match(/"token"\s*:\s*"([^"]+)"/);
+            if (tokenMatch) token = tokenMatch[1];
+          }
         } catch (e) {
-          console.warn(`A API não retornou JSON. Tentando prosseguir com URL customizada se existir. Resposta: ${responseText.substring(0, 100)}`);
+          console.error('Erro ao parsear info response:', e);
+          throw new Error(`API info não retornou JSON válido: ${infoText.substring(0, 100)}`);
         }
 
-        // Se houver uma URL customizada de renovação, tentamos acessá-la
-        let customRenewalStatus: number | null = null;
-        if (panel.renewal_url) {
-          console.log(`Acessando URL customizada de renovação: ${panel.renewal_url}`);
-          try {
-            const customUrl = new URL(panel.renewal_url);
-            const urlToFetch = customUrl.toString();
-            
-            // Vamos passar o cookie se o login retornou no header (painéis web)
-            const setCookieHeader = loginResponse.headers.get('set-cookie');
-            const headers: Record<string, string> = {};
-            if (setCookieHeader) {
-              headers['Cookie'] = setCookieHeader;
-            }
-
-            const customResponse = await fetch(urlToFetch, { headers });
-            customRenewalStatus = customResponse.status;
-            console.log(`Resposta da URL customizada: ${customResponse.status}`);
-          } catch (customUrlErr) {
-            console.error('Erro ao acessar URL customizada:', customUrlErr);
-          }
+        if (!token) {
+          throw new Error(`Token não encontrado na resposta do /info: ${infoText.substring(0, 200)}`);
         }
+        console.log(`Token obtido: ${token.substring(0, 8)}...`);
 
-        // 2. Buscar info do usuário via player_api
-        let newExpDate = 0;
+        // 2. Buscar usuário na lista para encontrar o ID interno
+        const listUrl = `${apiBase}/list?username=${encodeURIComponent(adminUser)}&password=${encodeURIComponent(adminPassword)}&token=${encodeURIComponent(token)}&limit=100&page=1&orderBy=id&order=desc&search=${encodeURIComponent(username)}`;
+        console.log(`Buscando usuário ${username} na lista...`);
+        const listResponse = await fetch(listUrl);
+        const listText = await listResponse.text();
+        console.log(`List response status: ${listResponse.status}, body: ${listText.substring(0, 500)}`);
+
+        let internalUserId: string | null = null;
         try {
-          const playerApiUrl = `${xuiApiUrl}/player_api.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(username)}`;
-          const userInfoResponse = await fetch(playerApiUrl);
-          const userInfo = await userInfoResponse.json();
-          
-          if (userInfo?.user_info) {
-            const currentExpDate = userInfo.user_info.exp_date;
-            const now = Math.floor(Date.now() / 1000);
-            const baseTimestamp = (currentExpDate && Number(currentExpDate) > now) ? Number(currentExpDate) : now;
-            newExpDate = baseTimestamp + (durationDays * 86400);
-            console.log(`Renovando: exp_date atual=${currentExpDate}, nova=${newExpDate}, dias=${durationDays}`);
-          } else {
-            console.warn(`Usuário ${username} não encontrado no player_api, mas prosseguindo devido à URL customizada.`);
+          const listData = JSON.parse(listText);
+          // Procurar o usuário pelo username/token na lista
+          const users = listData.data || listData.users || listData.rows || listData;
+          if (Array.isArray(users)) {
+            const found = users.find((u: any) => 
+              String(u.username) === String(username) || 
+              String(u.token) === String(username) ||
+              String(u.notes)?.includes(String(username))
+            );
+            if (found) {
+              internalUserId = String(found.id);
+              console.log(`Usuário encontrado! ID interno: ${internalUserId}`);
+            }
           }
-        } catch (apiError) {
-          console.error("Erro na player_api:", apiError);
-          // Não falhamos aqui se a URL customizada possivelmente já fez o trabalho
+        } catch (e) {
+          console.error('Erro ao parsear list response:', e);
         }
 
-        // Marcar renovação como pendente de verificação manual
-        // A URL customizada foi acessada mas não temos confirmação que a renovação foi efetiva
-        await supabase
-          .from('payments')
-          .update({
-            renewal_status: 'manual_check',
-            renewal_message: `URL customizada acessada (status ${customRenewalStatus || 'N/A'}). Verificar manualmente se o usuário ${username} foi renovado no painel.`,
-          })
-          .eq('id', externalReference);
+        if (!internalUserId) {
+          throw new Error(`Usuário ${username} não encontrado na lista do painel. Resposta: ${listText.substring(0, 200)}`);
+        }
+
+        // 3. Chamar PUT /extend/{userId} para renovar
+        const extendUrl = `${apiBase}/extend/${internalUserId}?username=${encodeURIComponent(adminUser)}&password=${encodeURIComponent(adminPassword)}&token=${encodeURIComponent(token)}`;
+        console.log(`Chamando PUT extend para usuário ID ${internalUserId}...`);
+        const extendResponse = await fetch(extendUrl, { method: 'PUT' });
+        const extendText = await extendResponse.text();
+        console.log(`Extend response status: ${extendResponse.status}, body: ${extendText.substring(0, 300)}`);
+
+        if (extendResponse.status === 200) {
+          await supabase
+            .from('payments')
+            .update({
+              renewal_status: 'success',
+              renewal_message: `Usuário ${username} (ID: ${internalUserId}) renovado com sucesso via API do painel.`,
+            })
+            .eq('id', externalReference);
+          console.log(`Renovação concluída com sucesso para ${username}!`);
+        } else {
+          throw new Error(`API extend retornou status ${extendResponse.status}: ${extendText.substring(0, 200)}`);
+        }
 
       } catch (renewError) {
-        console.error('Erro ao renovar no XUI:', renewError);
+        console.error('Erro ao renovar:', renewError);
         await supabase
           .from('payments')
           .update({
