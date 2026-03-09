@@ -258,7 +258,7 @@ export function PanelsManager() {
             <CardContent>
               <div className="space-y-2 text-sm">
                 <p className="text-slate-300">
-                  <span className="font-medium">URL:</span> {panel.url}
+                  <span className="font-medium">API:</span> {panel.url}
                 </p>
                 <p className="text-slate-300">
                   <span className="font-medium">Admin:</span> {panel.admin_user}
