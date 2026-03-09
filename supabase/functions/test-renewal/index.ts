@@ -18,15 +18,12 @@ serve(async (req) => {
     };
     const results: any[] = [];
 
-    // Test various body payloads for PUT /extend
+    // More payload variants
     const payloads = [
-      { name: 'days:30', body: { days: 30 } },
-      { name: 'duration:30', body: { duration: 30 } },
-      { name: 'months:1', body: { months: 1 } },
-      { name: 'exp_date+days', body: { exp_date: "2026-05-08T23:59:59.999Z", days: 30 } },
-      { name: 'package+days', body: { package: "5da17892133a1d61888029aa", days: 30 } },
-      { name: 'period:30d', body: { period: "30d" } },
-      { name: 'time:30', body: { time: 30 } },
+      { name: 'exp_date only', body: { exp_date: "2026-05-08T23:59:59.999Z" } },
+      { name: 'username+exp_date', body: { username: "39975095", exp_date: "2026-05-08T23:59:59.999Z" } },
+      { name: 'id+exp_date', body: { id: 20555, exp_date: "2026-05-08T23:59:59.999Z" } },
+      { name: 'full user fields', body: { username: "39975095", password: "53825852", exp_date: "2026-05-08T23:59:59.999Z", package: "5da17892133a1d61888029aa", id_res: "4556", enabled: true, system: "P2P" } },
     ];
 
     for (const p of payloads) {
@@ -37,6 +34,20 @@ serve(async (req) => {
       });
       const t = await r.text();
       results.push({ test: p.name, status: r.status, body: t.substring(0, 300) });
+    }
+
+    // Also try other endpoints
+    const endpoints = [
+      { name: 'PUT /renew/20555', method: 'PUT', url: `${apiBase}/renew/${userId}`, body: { exp_date: "2026-05-08T23:59:59.999Z" } },
+      { name: 'PUT /update/20555', method: 'PUT', url: `${apiBase}/update/${userId}`, body: { exp_date: "2026-05-08T23:59:59.999Z" } },
+      { name: 'PUT /user/20555', method: 'PUT', url: `${apiBase}/user/${userId}`, body: { exp_date: "2026-05-08T23:59:59.999Z" } },
+      { name: 'PUT /edit/20555', method: 'PUT', url: `${apiBase}/edit/${userId}`, body: { exp_date: "2026-05-08T23:59:59.999Z" } },
+    ];
+
+    for (const e of endpoints) {
+      const r = await fetch(e.url, { method: e.method, headers: authHeaders, body: JSON.stringify(e.body) });
+      const t = await r.text();
+      results.push({ test: e.name, status: r.status, body: t.substring(0, 300) });
     }
 
     return new Response(JSON.stringify(results, null, 2), {
