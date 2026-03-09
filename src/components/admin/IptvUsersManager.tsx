@@ -203,6 +203,25 @@ export function IptvUsersManager() {
                   required
                 />
               </div>
+
+              <div>
+                <Label htmlFor="plan_id" className="text-slate-300">Plano de Renovação *</Label>
+                <Select
+                  value={formData.plan_id}
+                  onValueChange={(value) => setFormData({ ...formData, plan_id: value })}
+                >
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                    <SelectValue placeholder="Selecione um plano" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    {plans?.map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id} className="text-white">
+                        {plan.name} - {plan.duration_days} dias - R$ {Number(plan.price).toFixed(2)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               
               <div>
                 <Label htmlFor="customer_name" className="text-slate-300">Nome do Cliente</Label>
