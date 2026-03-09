@@ -26,21 +26,27 @@ const AdminDashboard = () => {
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
       const [panelsResult, plansResult, paymentsResult] = await Promise.all([
-        supabase.from("iptv_panels").select("*", { count: "exact" }),
-        supabase.from("plans").select("*", { count: "exact" }),
-        supabase.from("payments").select("amount, status").eq("status", "approved"),
+        supabase.from("iptv_panels").select("*", { count: "exact", head: true }),
+        supabase.from("plans").select("*", { count: "exact", head: true }),
+        supabase.from("payments").select("amount").eq("status", "approved").gte("created_at", startOfMonth),
       ]);
 
-      const totalRevenue = paymentsResult.data?.reduce((sum, payment) => 
-        sum + Number(payment.amount), 0
-      ) || 0;
+      let monthlyProfit = 0;
+      const monthlyPayments = paymentsResult.data?.length || 0;
+
+      paymentsResult.data?.forEach(payment => {
+        monthlyProfit += (Number(payment.amount) - 12);
+      });
 
       return {
         totalPanels: panelsResult.count || 0,
         totalPlans: plansResult.count || 0,
-        totalPayments: paymentsResult.data?.length || 0,
-        totalRevenue: totalRevenue.toFixed(2),
+        monthlyPayments,
+        monthlyProfit: monthlyProfit.toFixed(2),
       };
     },
   });
