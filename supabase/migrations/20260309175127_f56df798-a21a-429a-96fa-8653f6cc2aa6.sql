@@ -1,0 +1,1 @@
+ALTER TABLE public.iptv_users ADD COLUMN plan_id uuid REFERENCES public.plans(id) ON DELETE SET NULL;
