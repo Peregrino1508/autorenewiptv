@@ -7,11 +7,12 @@ import { PaymentsViewer } from "@/components/admin/PaymentsViewer";
 import { SettingsManager } from "@/components/admin/SettingsManager";
 import { IptvUsersManager } from "@/components/admin/IptvUsersManager";
 import { CreateTrialDialog } from "@/components/admin/CreateTrialDialog";
+import { FinancialReports } from "@/components/admin/FinancialReports";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart } from "lucide-react";
+import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart, DollarSign, FileText } from "lucide-react";
 
 const AdminDashboard = () => {
   const { signOut, user } = useAuth();
