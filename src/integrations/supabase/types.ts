@@ -24,6 +24,7 @@ export type Database = {
           name: string
           notes: string | null
           panel_type: string
+          renewal_url: string | null
           updated_at: string
           url: string
         }
@@ -36,6 +37,7 @@ export type Database = {
           name: string
           notes?: string | null
           panel_type?: string
+          renewal_url?: string | null
           updated_at?: string
           url: string
         }
@@ -48,6 +50,7 @@ export type Database = {
           name?: string
           notes?: string | null
           panel_type?: string
+          renewal_url?: string | null
           updated_at?: string
           url?: string
         }
