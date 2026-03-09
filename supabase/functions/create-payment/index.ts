@@ -12,10 +12,10 @@ serve(async (req) => {
   }
 
   try {
-    const { iptv_username, customer_email, customer_name, plan_id, panel_id } = await req.json();
+    const { iptv_username, customer_email, customer_name, plan_id, panel_id, registered_user_payment } = await req.json();
 
-    if (!iptv_username || !plan_id) {
-      throw new Error('Missing required fields');
+    if (!iptv_username) {
+      throw new Error('Campo iptv_username é obrigatório');
     }
 
     const supabase = createClient(
@@ -23,27 +23,70 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Obter dados do plano
-    const { data: plan, error: planError } = await supabase
-      .from('plans')
-      .select('*')
-      .eq('id', plan_id)
-      .single();
-
-    if (planError || !plan) {
-      throw new Error('Plan not found');
-    }
-
-    // Obter dados do painel, ou o primeiro painel ativo se panel_id não for fornecido
+    let planData = null;
     let panelData = null;
-    if (panel_id) {
-      const { data, error } = await supabase.from('iptv_panels').select('*').eq('id', panel_id).single();
-      if (error) throw new Error('Panel not found');
-      panelData = data;
+    let amount = 0;
+    let paymentDescription = '';
+
+    // Check if this is a registered user payment
+    if (registered_user_payment) {
+      // Look up the registered user
+      const { data: registeredUser, error: userError } = await supabase
+        .from('iptv_users')
+        .select('*')
+        .eq('username', iptv_username)
+        .eq('is_active', true)
+        .single();
+
+      if (userError || !registeredUser) {
+        throw new Error('Usuário não encontrado. Verifique o número do usuário cadastrado.');
+      }
+
+      amount = Number(registeredUser.amount_due);
+      paymentDescription = `Renovação IPTV - Usuário: ${iptv_username} - Valor: R$ ${amount.toFixed(2)}`;
+      
+      // Get the first active panel for this user
+      const { data: firstActivePanel, error: panelError } = await supabase
+        .from('iptv_panels')
+        .select('*')
+        .eq('is_active', true)
+        .limit(1)
+        .single();
+      
+      if (panelError) throw new Error('Nenhum painel ativo encontrado');
+      panelData = firstActivePanel;
+      
     } else {
-      const { data, error } = await supabase.from('iptv_panels').select('*').eq('is_active', true).limit(1).single();
-      if (error) throw new Error('No active panel found');
-      panelData = data;
+      // Regular plan-based payment
+      if (!plan_id) {
+        throw new Error('Para pagamentos não cadastrados, é necessário selecionar um plano');
+      }
+
+      // Get plan data
+      const { data: plan, error: planError } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('id', plan_id)
+        .single();
+
+      if (planError || !plan) {
+        throw new Error('Plano não encontrado');
+      }
+      
+      planData = plan;
+      amount = Number(plan.price);
+      paymentDescription = `Renovação IPTV - ${plan.name} - Usuário: ${iptv_username}`;
+
+      // Get panel data
+      if (panel_id) {
+        const { data, error } = await supabase.from('iptv_panels').select('*').eq('id', panel_id).single();
+        if (error) throw new Error('Painel não encontrado');
+        panelData = data;
+      } else {
+        const { data, error } = await supabase.from('iptv_panels').select('*').eq('is_active', true).limit(1).single();
+        if (error) throw new Error('Nenhum painel ativo encontrado');
+        panelData = data;
+      }
     }
 
     const mpAccessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
