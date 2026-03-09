@@ -25,7 +25,7 @@ export default function Checkout() {
   const [registeredUser, setRegisteredUser] = useState<any>(null);
 
   // Fetch registered user data if user param exists
-  const { data: userData, isLoading: userLoading } = useQuery({
+  const { data: userData } = useQuery({
     queryKey: ["registered-user", userParam],
     queryFn: async () => {
       if (!userParam) return null;
@@ -39,18 +39,20 @@ export default function Checkout() {
       return data;
     },
     enabled: !!userParam,
-    onSuccess: (data) => {
-      if (data) {
-        setRegisteredUser(data);
-        setFormData(prev => ({
-          ...prev,
-          iptv_username: data.username,
-          customer_email: data.customer_email || "",
-          customer_name: data.customer_name || "",
-        }));
-      }
-    },
   });
+
+  // Update form data when registered user is loaded
+  useEffect(() => {
+    if (userData) {
+      setRegisteredUser(userData);
+      setFormData(prev => ({
+        ...prev,
+        iptv_username: userData.username,
+        customer_email: userData.customer_email || "",
+        customer_name: userData.customer_name || "",
+      }));
+    }
+  }, [userData]);
 
   const { data: plans } = useQuery({
     queryKey: ["active-plans"],
