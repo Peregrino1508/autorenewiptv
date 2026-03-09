@@ -198,15 +198,19 @@ export function PanelsManager() {
               </div>
               
               <div>
-                <Label htmlFor="admin_password">Senha Admin</Label>
+                <Label htmlFor="admin_password">Token da API (Bearer Token)</Label>
                 <Input
                   id="admin_password"
                   type="password"
                   value={formData.admin_password}
                   onChange={(e) => setFormData({ ...formData, admin_password: e.target.value })}
                   className="bg-white/10 border-white/20 text-white"
+                  placeholder="Ex: 7222a544a4eddc1f..."
                   required
                 />
+                <p className="text-xs text-slate-400 mt-1">
+                  Token encontrado no cabeçalho Authorization do navegador ao acessar o painel
+                </p>
               </div>
               
               <div className="flex items-center space-x-2">
