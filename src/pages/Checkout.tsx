@@ -209,7 +209,7 @@ export default function Checkout() {
 
             <div className="space-y-4">
               <div>
-                <Label htmlFor="iptv_username" className="text-slate-300">Seu Usuário IPTV *</Label>
+                <Label htmlFor="iptv_username" className="text-slate-300">Seu Usuário IPTV e P2P para renovação *</Label>
                 <div className="relative mt-1">
                   <User className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
                   <Input
