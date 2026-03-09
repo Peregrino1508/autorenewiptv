@@ -49,31 +49,22 @@ serve(async (req) => {
     const apiRoot = apiBase.replace(/\/(p2p|iptv|nexus|red-club)$/i, '');
 
     // Step 1: Login to get JWT token
-    console.log(`Autenticando via POST /auth/login com usuário ${adminUser}...`);
+    console.log(`Autenticando ${adminUser} via POST /auth/login...`);
     const loginResponse = await fetch(`${apiRoot}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: adminUser, password: adminPassword })
     });
-    const loginText = await loginResponse.text();
-    console.log(`Login response status: ${loginResponse.status}, body: ${loginText.substring(0, 300)}`);
+    const loginData = await loginResponse.json();
 
-    let loginData;
-    try { loginData = JSON.parse(loginText); } catch (e) {
-      throw new Error(`Falha ao parsear resposta do login: ${loginText.substring(0, 200)}`);
+    if (!loginData.auth || !loginData.token) {
+      throw new Error(`Login falhou: ${JSON.stringify(loginData).substring(0, 200)}`);
     }
 
-    // If login fails, try using admin_password directly as the token
-    let authToken: string;
-    if (loginData.auth && loginData.token) {
-      authToken = loginData.token;
-      console.log(`JWT obtido via login: ${authToken.substring(0, 20)}...`);
-    } else {
-      // Fallback: use admin_password as direct token
-      authToken = adminPassword;
-      console.log(`Login falhou, usando admin_password como token direto: ${authToken.substring(0, 8)}...`);
-    }
+    const authToken = loginData.token;
+    console.log(`JWT obtido com sucesso`);
 
+    // Build auth query params
     const authQs = `token=${encodeURIComponent(authToken)}&password=${encodeURIComponent(adminPassword)}&username=${encodeURIComponent(adminUser)}`;
 
     // Step 2: Create trial user
@@ -105,9 +96,7 @@ serve(async (req) => {
         throw new Error(`Sistema não suportado para teste: ${system_type}`);
     }
 
-    console.log(`Criando teste ${system_type} via POST ${createUrl.split('?')[0]}...`);
-    
-    // Try with Bearer header + query params
+    console.log(`Criando teste ${system_type}...`);
     const createResponse = await fetch(createUrl, {
       method: 'POST',
       headers: {
@@ -117,16 +106,11 @@ serve(async (req) => {
       body: JSON.stringify(createBody)
     });
 
-    const createText = await createResponse.text();
-    console.log(`Create response status: ${createResponse.status}, body: ${createText.substring(0, 500)}`);
-
-    let createData;
-    try { createData = JSON.parse(createText); } catch (e) {
-      throw new Error(`Resposta inválida da API: ${createText.substring(0, 300)}`);
-    }
+    const createData = await createResponse.json();
+    console.log(`Resposta: status ${createResponse.status}`);
 
     if (createResponse.status !== 201 && createResponse.status !== 200) {
-      throw new Error(`Erro ao criar teste: ${createText.substring(0, 300)}`);
+      throw new Error(`Erro ao criar teste: ${JSON.stringify(createData).substring(0, 300)}`);
     }
 
     return new Response(JSON.stringify({
