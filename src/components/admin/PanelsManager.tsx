@@ -77,9 +77,24 @@ export function PanelsManager() {
     },
   });
 
-  // Delete panel mutation
+  // Delete panel mutation (cascade: delete related payments and plans first)
   const deletePanel = useMutation({
     mutationFn: async (id: string) => {
+      // 1. Delete payments referencing this panel
+      const { error: paymentsError } = await supabase
+        .from("payments")
+        .delete()
+        .eq("panel_id", id);
+      if (paymentsError) throw paymentsError;
+
+      // 2. Delete plans referencing this panel
+      const { error: plansError } = await supabase
+        .from("plans")
+        .delete()
+        .eq("panel_id", id);
+      if (plansError) throw plansError;
+
+      // 3. Delete the panel itself
       const { error } = await supabase
         .from("iptv_panels")
         .delete()
