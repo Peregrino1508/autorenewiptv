@@ -12,15 +12,45 @@ import { useSearchParams } from "react-router-dom";
 export default function Checkout() {
   const [searchParams] = useSearchParams();
   const status = searchParams.get("status");
+  const userParam = searchParams.get("user");
   
   const [formData, setFormData] = useState({
-    iptv_username: "",
+    iptv_username: userParam || "",
     customer_email: "",
     customer_name: "",
     plan_id: "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [registeredUser, setRegisteredUser] = useState<any>(null);
+
+  // Fetch registered user data if user param exists
+  const { data: userData, isLoading: userLoading } = useQuery({
+    queryKey: ["registered-user", userParam],
+    queryFn: async () => {
+      if (!userParam) return null;
+      const { data, error } = await supabase
+        .from("iptv_users")
+        .select("*")
+        .eq("username", userParam)
+        .eq("is_active", true)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userParam,
+    onSuccess: (data) => {
+      if (data) {
+        setRegisteredUser(data);
+        setFormData(prev => ({
+          ...prev,
+          iptv_username: data.username,
+          customer_email: data.customer_email || "",
+          customer_name: data.customer_name || "",
+        }));
+      }
+    },
+  });
 
   const { data: plans } = useQuery({
     queryKey: ["active-plans"],
