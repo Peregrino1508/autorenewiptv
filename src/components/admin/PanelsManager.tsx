@@ -27,6 +27,7 @@ export function PanelsManager() {
     panel_type: "xui_one",
     is_active: true,
     notes: "",
+    renewal_url: "",
   });
 
   // Fetch panels
