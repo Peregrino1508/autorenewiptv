@@ -49,6 +49,7 @@ export default function Checkout() {
         customer_name: data.customer_name || "",
       }));
     } catch (error) {
+      console.error("Search error:", error);
       setRegisteredUser(null);
     }
   };
