@@ -172,12 +172,13 @@ serve(async (req) => {
           // Não falhamos aqui se a URL customizada possivelmente já fez o trabalho
         }
 
-        // Marcar renovação como sucesso (a chamada real de update depende da versão do XUI)
+        // Marcar renovação como pendente de verificação manual
+        // A URL customizada foi acessada mas não temos confirmação que a renovação foi efetiva
         await supabase
           .from('payments')
           .update({
-            renewal_status: 'success',
-            renewal_message: `Processo de renovação finalizado. URL customizada acessada.`,
+            renewal_status: 'manual_check',
+            renewal_message: `URL customizada acessada (status ${customRenewalStatus || 'N/A'}). Verificar manualmente se o usuário ${username} foi renovado no painel.`,
           })
           .eq('id', externalReference);
 
