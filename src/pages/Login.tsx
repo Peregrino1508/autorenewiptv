@@ -50,7 +50,7 @@ const Login = () => {
     const { error: signInError } = await signIn(data.email, data.password);
 
     if (signInError) {
-      setError('Email ou senha incorretos. Tente novamente.');
+      setError('Credenciais inválidas. Verifique seu email e senha e tente novamente.');
     }
 
     setIsLoading(false);
