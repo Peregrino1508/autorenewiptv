@@ -118,6 +118,7 @@ export function IptvUsersManager() {
       customer_name: "",
       customer_email: "",
       is_active: true,
+      plan_id: "",
     });
     setEditingUser(null);
   };
@@ -129,6 +130,7 @@ export function IptvUsersManager() {
       customer_name: user.customer_name || "",
       customer_email: user.customer_email || "",
       is_active: user.is_active,
+      plan_id: user.plan_id || "",
     });
     setEditingUser(user);
     setIsDialogOpen(true);
