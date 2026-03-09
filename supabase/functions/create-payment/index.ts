@@ -121,10 +121,10 @@ serve(async (req) => {
       body: JSON.stringify({
         items: [
           {
-            id: plan.id,
-            title: `Renovação IPTV - ${plan.name} - Usuário: ${iptv_username}`,
+            id: planData?.id || `user_${iptv_username}`,
+            title: paymentDescription,
             quantity: 1,
-            unit_price: Number(plan.price),
+            unit_price: amount,
             currency_id: 'BRL',
           }
         ],
