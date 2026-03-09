@@ -14,6 +14,7 @@ import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart } 
 
 const AdminDashboard = () => {
   const { signOut, user } = useAuth();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await signOut();
