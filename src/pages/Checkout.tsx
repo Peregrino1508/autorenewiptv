@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Mail, User, ShieldCheck } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { Mail, User, ShieldCheck, ArrowLeft } from "lucide-react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
