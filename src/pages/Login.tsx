@@ -62,7 +62,7 @@ const Login = () => {
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#3b82f630_1px,transparent_1px),linear-gradient(to_bottom,#8b5cf630_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] animate-pulse" />
       
       <Card className="w-full max-w-6xl relative z-10 bg-white/60 backdrop-blur-lg border-white/40 shadow-2xl shadow-purple-500/30">
-        <CardHeader className="space-y-8 text-center py-12">
+        <CardHeader className="space-y-12 text-center py-16">
           <div className="flex items-center justify-center space-x-4">
             <div className="p-4 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full">
               <Tv className="w-12 h-12 text-blue-600" />
