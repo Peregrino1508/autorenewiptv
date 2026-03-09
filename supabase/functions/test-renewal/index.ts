@@ -11,43 +11,45 @@ serve(async (req) => {
   try {
     const results: any[] = [];
 
-    // Login
+    // Login first to get fresh token
     const loginRes = await fetch('https://api-new.paineloffice.click/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: 'Robsonamorim', password: 'vitoriadaluz' })
     });
     const loginData = JSON.parse(await loginRes.text());
-    const { token, username, password } = loginData;
-    results.push({ step: 'login', token, username, password });
+    const token = loginData.token;
 
     const userId = "20555";
-    const qs = `token=${encodeURIComponent(token)}&password=${encodeURIComponent(password)}&username=${encodeURIComponent(username)}`;
+    // Use raw credentials in query params (this passed auth!)
+    const qs = `token=${encodeURIComponent(token)}&password=vitoriadaluz&username=Robsonamorim`;
 
-    // Test 1: PUT with query params ONLY (no Bearer)
-    let r = await fetch(`https://api-new.paineloffice.click/p2p/extend/${userId}?${qs}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
-    });
-    results.push({ test: 'PUT query-only', status: r.status, body: (await r.text()).substring(0, 500) });
+    // The UpdateUserP2PDto likely needs package/exp_date/type fields
+    // Test various body payloads
+    const payloads = [
+      { name: 'package only', body: { package: "5da17892133a1d61888029aa" } },
+      { name: 'type:renewal', body: { type: "renewal" } },
+      { name: 'type:extend', body: { type: "extend" } },
+      { name: 'type:renew', body: { type: "renew" } },
+      { name: 'type:official', body: { type: "official" } },
+      { name: 'package+type', body: { package: "5da17892133a1d61888029aa", type: "renewal" } },
+      { name: 'package+exp', body: { package: "5da17892133a1d61888029aa", exp_date: "2026-05-08T23:59:59.999Z" } },
+      { name: 'package+type+exp', body: { package: "5da17892133a1d61888029aa", type: "renewal", exp_date: "2026-05-08T23:59:59.999Z" } },
+      { name: 'id_res', body: { id_res: "4556" } },
+      { name: 'pack+idres', body: { package: "5da17892133a1d61888029aa", id_res: "4556" } },
+    ];
 
-    // Test 2: PUT with Bearer + query params  
-    r = await fetch(`https://api-new.paineloffice.click/p2p/extend/${userId}?${qs}`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
-    });
-    results.push({ test: 'PUT Bearer+query', status: r.status, body: (await r.text()).substring(0, 500) });
-
-    // Test 3: PUT with raw password (not base64) in query
-    const qs2 = `token=${encodeURIComponent(token)}&password=vitoriadaluz&username=Robsonamorim`;
-    r = await fetch(`https://api-new.paineloffice.click/p2p/extend/${userId}?${qs2}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
-    });
-    results.push({ test: 'PUT raw-creds', status: r.status, body: (await r.text()).substring(0, 500) });
+    for (const p of payloads) {
+      const r = await fetch(`https://api-new.paineloffice.click/p2p/extend/${userId}?${qs}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(p.body)
+      });
+      const t = await r.text();
+      results.push({ test: p.name, status: r.status, body: t.substring(0, 300) });
+      // If we get a different response, stop
+      if (!t.includes('missing field')) break;
+    }
 
     return new Response(JSON.stringify(results, null, 2), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
