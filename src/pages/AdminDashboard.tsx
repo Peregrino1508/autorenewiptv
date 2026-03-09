@@ -5,6 +5,7 @@ import { PanelsManager } from "@/components/admin/PanelsManager";
 import { PlansManager } from "@/components/admin/PlansManager";
 import { PaymentsViewer } from "@/components/admin/PaymentsViewer";
 import { SettingsManager } from "@/components/admin/SettingsManager";
+import { IptvUsersManager } from "@/components/admin/IptvUsersManager";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
