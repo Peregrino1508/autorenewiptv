@@ -9,10 +9,12 @@ import { IptvUsersManager } from "@/components/admin/IptvUsersManager";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Activity, Settings, CreditCard, Package, Users, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart } from "lucide-react";
 
 const AdminDashboard = () => {
   const { signOut, user } = useAuth();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await signOut();
@@ -59,14 +61,24 @@ const AdminDashboard = () => {
             )}
           </div>
           
-          <Button
-            onClick={handleSignOut}
-            variant="outline"
-            className="bg-white/5 border-white/20 text-slate-300 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-400"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sair
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={() => navigate("/checkout")}
+              variant="outline"
+              className="bg-white/5 border-white/20 text-slate-300 hover:bg-green-500/20 hover:border-green-500/40 hover:text-green-400"
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Ir para Checkout
+            </Button>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              className="bg-white/5 border-white/20 text-slate-300 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-400"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
+          </div>
         </div>
 
         {/* Statistics Cards */}
