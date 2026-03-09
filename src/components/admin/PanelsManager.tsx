@@ -124,7 +124,6 @@ export function PanelsManager() {
       panel_type: panel.panel_type,
       is_active: panel.is_active,
       notes: panel.notes || "",
-      renewal_url: (panel as any).renewal_url || "",
     });
     setEditingPanel(panel);
     setIsDialogOpen(true);
