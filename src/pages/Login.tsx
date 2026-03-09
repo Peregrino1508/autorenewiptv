@@ -116,7 +116,7 @@ const Login = () => {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-4 text-slate-400 hover:text-white"
+                          className="absolute right-0 top-0 h-full px-4 text-slate-600 hover:text-blue-600"
                           onClick={() => setShowPassword(!showPassword)}
                           disabled={isLoading}
                         >
