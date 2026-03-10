@@ -205,7 +205,7 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="panels" className="w-full">
-              <TabsList className="flex w-full items-start justify-start overflow-x-auto bg-white/10 rounded-lg p-1 gap-1 no-scrollbar sm:flex-wrap sm:items-center sm:justify-center">
+              <TabsList className="flex w-full items-start justify-start overflow-x-auto bg-white/10 rounded-lg p-1 gap-1 sm:flex-wrap sm:items-center sm:justify-center">
                 <TabsTrigger 
                   value="panels" 
                   className="flex-1 min-w-[100px] md:min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm"
