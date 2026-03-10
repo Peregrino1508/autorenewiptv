@@ -8,11 +8,13 @@ import { toast } from "@/hooks/use-toast";
 import { Mail, User, ShieldCheck, ArrowLeft, Tv, ArrowRight } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const status = searchParams.get("status");
+  const checkoutStatus = searchParams.get("checkout_status");
   const userParam = searchParams.get("user");
   
   const [formData, setFormData] = useState({
@@ -147,6 +149,7 @@ export default function Checkout() {
     }
   };
 
+
   const handleReset = () => {
     setFormData({
       iptv_username: "",
@@ -181,7 +184,7 @@ export default function Checkout() {
         {isAdmin && (
           <div className="mt-4 flex justify-center">
             <Button
-              onClick={() => navigate('/checkout?status=success')}
+              onClick={() => navigate('/checkout?checkout_status=success&user=teste')}
               variant="outline"
               size="sm"
               className="bg-yellow-500/10 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 hover:text-yellow-300 gap-2 border-dashed"
@@ -273,7 +276,7 @@ export default function Checkout() {
         </form>
       </Card>
       {/* Success Modal Overlay */}
-      {status === 'success' && (
+      {checkoutStatus === 'success' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
           <Card className="w-full max-w-lg bg-slate-900/90 backdrop-blur-2xl border-white/10 shadow-[0_0_80px_-20px_rgba(34,197,94,0.4)] animate-in fade-in zoom-in duration-300">
             <CardHeader className="text-center pt-8 pb-4">
@@ -297,8 +300,15 @@ export default function Checkout() {
             <CardContent className="text-center space-y-6 px-8">
               <div className="p-4 bg-white/5 rounded-xl border border-white/5 backdrop-blur-sm">
                 <p className="text-slate-300 text-base leading-relaxed">
-                  Olá {formData.iptv_username ? <span className="text-blue-400 font-bold">{formData.iptv_username}</span> : 'cliente'}, sua assinatura foi processada e os créditos já estão disponíveis na sua conta! 🎈
+                  Olá {userParam ? <span className="text-blue-400 font-bold">{userParam}</span> : 'cliente'}, sua assinatura foi processada e os créditos já estão disponíveis na sua conta! 🎈
                 </p>
+                {registeredUser?.expires_at && (
+                  <div className="mt-2 pt-2 border-t border-white/5">
+                    <p className="text-slate-400 text-sm">
+                      Próxima renovação: <span className="text-green-400 font-bold">{format(new Date(registeredUser.expires_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3">

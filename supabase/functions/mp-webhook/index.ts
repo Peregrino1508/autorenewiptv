@@ -209,6 +209,8 @@ serve(async (req) => {
 
         if (extendData?.success === true) {
           const newExpDate = extendData.result?.endTime || 'N/A';
+          
+          // Atualizar o registro do pagamento
           await supabase
             .from('payments')
             .update({
@@ -216,6 +218,15 @@ serve(async (req) => {
               renewal_message: `Usuário ${username} (ID: ${internalUserId}) renovado no sistema ${foundInSystem} por ${months} mês(es). Nova expiração: ${newExpDate}`,
             })
             .eq('id', externalReference);
+
+          // Atualizar a data de expiração no cadastro do usuário
+          if (newExpDate !== 'N/A') {
+            await supabase
+              .from('iptv_users')
+              .update({ expires_at: newExpDate })
+              .eq('username', username);
+          }
+          
           console.log(`Renovação concluída com sucesso para ${username} no sistema ${foundInSystem}! Nova expiração: ${newExpDate}`);
         } else {
           throw new Error(`API extend falhou no sistema ${foundInSystem}: ${extendText.substring(0, 200)}`);
