@@ -12,7 +12,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart, DollarSign, FileText } from "lucide-react";
+import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart, DollarSign, FileText, Menu } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const AdminDashboard = () => {
   const { signOut, user } = useAuth();
@@ -58,18 +65,60 @@ const AdminDashboard = () => {
       
       <div className="relative z-10 container mx-auto p-6">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <div className="flex-1">
+            <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mb-2 truncate">
               Painel Administrativo
             </h1>
-            <p className="text-slate-400 text-lg">Gestão completa do sistema IPTV</p>
+            <p className="text-slate-400 text-sm md:text-lg">Gestão completa do sistema IPTV</p>
             {user?.email && (
-              <p className="text-slate-500 text-sm mt-1">Logado como: {user.email}</p>
+              <p className="text-slate-500 text-xs mt-1 hidden md:block">Logado como: {user.email}</p>
             )}
           </div>
           
-          <div className="flex gap-3">
+          {/* Mobile Menu */}
+          <div className="md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="bg-white/5 border-white/20 text-slate-300">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="bg-slate-900 border-white/10 text-white w-[280px]">
+                <SheetHeader className="mb-8">
+                  <SheetTitle className="text-white">Ações do Admin</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col gap-4">
+                  <CreateTrialDialog />
+                  <Button
+                    onClick={() => navigate("/checkout")}
+                    variant="outline"
+                    className="w-full bg-white/5 border-white/20 text-slate-300 justify-start"
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Ir para Checkout
+                  </Button>
+                  <Button
+                    onClick={handleSignOut}
+                    variant="outline"
+                    className="w-full bg-white/5 border-white/20 text-slate-300 justify-start"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sair
+                  </Button>
+                  {user?.email && (
+                    <div className="mt-auto pt-8 border-t border-white/5">
+                      <p className="text-slate-500 text-xs">Logado como:</p>
+                      <p className="text-slate-300 text-sm truncate">{user.email}</p>
+                    </div>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          {/* Desktop Buttons */}
+          <div className="hidden md:flex gap-3">
             <CreateTrialDialog />
             <Button
               onClick={() => navigate("/checkout")}
@@ -156,45 +205,45 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="panels" className="w-full">
-              <TabsList className="flex flex-wrap w-full bg-white/10 rounded-lg p-1 gap-1">
+              <TabsList className="flex w-full items-start justify-start overflow-x-auto bg-white/10 rounded-lg p-1 gap-1 no-scrollbar sm:flex-wrap sm:items-center sm:justify-center">
                 <TabsTrigger 
                   value="panels" 
-                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[100px] md:min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm"
                 >
                   <Users className="w-4 h-4 mr-2" />
                   Painéis
                 </TabsTrigger>
                 <TabsTrigger 
                   value="users" 
-                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[100px] md:min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm"
                 >
                   <Users className="w-4 h-4 mr-2" />
                   Usuários
                 </TabsTrigger>
                 <TabsTrigger 
                   value="plans" 
-                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[100px] md:min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm"
                 >
                   <Package className="w-4 h-4 mr-2" />
                   Planos
                 </TabsTrigger>
                 <TabsTrigger 
                   value="payments" 
-                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[110px] md:min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm"
                 >
                   <CreditCard className="w-4 h-4 mr-2" />
                   Pagamentos
                 </TabsTrigger>
                 <TabsTrigger 
                   value="financial" 
-                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[100px] md:min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm"
                 >
                   <FileText className="w-4 h-4 mr-2" />
                   Extratos
                 </TabsTrigger>
                 <TabsTrigger 
                   value="settings" 
-                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300"
+                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm"
                 >
                   <Settings className="w-4 h-4 mr-2" />
                   Configurações
