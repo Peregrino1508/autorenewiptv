@@ -124,7 +124,7 @@ export function SpreadsheetManager() {
     }
   };
 
-  const renderCell = (record: Partial<CustomerRecord>, field: keyof CustomerRecord, type: string = "text") => {
+  const renderCell = (record: Partial<CustomerRecord>, field: keyof CustomerRecord, type: string = "text", customClass: string = "") => {
     return (
       <Input
         type={type}
@@ -135,7 +135,7 @@ export function SpreadsheetManager() {
             saveMutation.mutate({ ...record, [field]: val });
           }
         }}
-        className="bg-transparent border-none focus:ring-1 focus:ring-purple-500 h-8 text-xs text-white p-1"
+        className={`bg-transparent border-none focus:ring-1 focus:ring-purple-500 h-8 text-xs text-white p-1 ${customClass}`}
       />
     );
   };
@@ -157,32 +157,32 @@ export function SpreadsheetManager() {
         </Button>
       </CardHeader>
       <CardContent className="p-0 overflow-x-auto">
-        <Table>
+        <Table className="min-w-[1500px]">
           <TableHeader className="bg-white/10">
             <TableRow className="border-white/10">
-              <TableHead className="text-slate-300 text-xs font-bold">Cliente</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold">Usuário</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold">Senha</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold w-[250px]">Cliente</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold w-[180px]">Usuário</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold w-[180px]">Senha</TableHead>
               <TableHead className="text-slate-300 text-xs font-bold">Mês Venc.</TableHead>
               <TableHead className="text-slate-300 text-xs font-bold">Status</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold">Próx. Renov.</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold">Contato</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold">Msg 1</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold">Msg 2</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold w-[130px]">Próx. Renov.</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold w-[150px]">Contato</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold w-[200px]">Msg 1</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold w-[200px]">Msg 2</TableHead>
               <TableHead className="text-slate-300 text-xs font-bold">Valor</TableHead>
               <TableHead className="text-slate-300 text-xs font-bold">Despesa</TableHead>
               <TableHead className="text-slate-300 text-xs font-bold">Lucro</TableHead>
               <TableHead className="text-slate-300 text-xs font-bold">Assinatura</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold">Login (P2P/IPTV)</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold w-[120px]">Login (P2P/IPTV)</TableHead>
               <TableHead className="text-slate-300 text-xs font-bold w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {displayRecords.map((record, idx) => (
               <TableRow key={record.id || `new-${idx}`} className="border-white/5 hover:bg-white/5 transition-colors">
-                <TableCell className="p-1">{renderCell(record, "client_name")}</TableCell>
-                <TableCell className="p-1">{renderCell(record, "username")}</TableCell>
-                <TableCell className="p-1">{renderCell(record, "password")}</TableCell>
+                <TableCell className="p-1">{renderCell(record, "client_name", "text", "w-[240px]")}</TableCell>
+                <TableCell className="p-1">{renderCell(record, "username", "text", "w-[170px]")}</TableCell>
+                <TableCell className="p-1">{renderCell(record, "password", "text", "w-[170px]")}</TableCell>
                 <TableCell className="p-1">{renderCell(record, "expiry_month")}</TableCell>
                 <TableCell className="p-1">{renderCell(record, "status")}</TableCell>
                 <TableCell className="p-1">{renderCell(record, "next_renewal", "date")}</TableCell>
