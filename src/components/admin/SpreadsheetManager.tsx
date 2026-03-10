@@ -53,16 +53,19 @@ export function SpreadsheetManager() {
 
   const saveMutation = useMutation({
     mutationFn: async (record: Partial<CustomerRecord>) => {
+      // Remove the generated 'profit' column as it cannot be updated manually
+      const { profit, ...dataToSave } = record;
+      
       if (record.id) {
         const { error } = await supabase
           .from("customer_records")
-          .update(record)
+          .update(dataToSave)
           .eq("id", record.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("customer_records")
-          .insert([record]);
+          .insert([dataToSave]);
         if (error) throw error;
       }
     },
@@ -125,18 +128,35 @@ export function SpreadsheetManager() {
   };
 
   const renderCell = (record: Partial<CustomerRecord>, field: keyof CustomerRecord, type: string = "text", customClass: string = "") => {
+    const isText = type === "text";
+    
     return (
-      <Input
-        type={type}
-        defaultValue={record[field] as any}
-        onBlur={(e) => {
-          const val = type === "number" ? parseFloat(e.target.value) : e.target.value;
-          if (record[field] !== val) {
-            saveMutation.mutate({ ...record, [field]: val });
-          }
-        }}
-        className={`bg-transparent border-none focus:ring-1 focus:ring-purple-500 h-8 text-xs text-white p-1 ${customClass}`}
-      />
+      <div className={`overflow-hidden resize-x border-r border-white/5 ${customClass ? customClass : 'min-w-[100px]'}`}>
+        {isText ? (
+          <textarea
+            defaultValue={record[field] as any}
+            onBlur={(e) => {
+              if (record[field] !== e.target.value) {
+                saveMutation.mutate({ ...record, [field]: e.target.value });
+              }
+            }}
+            className="bg-transparent border-none focus:ring-1 focus:ring-purple-500 w-full h-8 text-xs text-white p-1 resize-none overflow-hidden hover:overflow-auto"
+            rows={1}
+          />
+        ) : (
+          <Input
+            type={type}
+            defaultValue={record[field] as any}
+            onBlur={(e) => {
+              const val = type === "number" ? parseFloat(e.target.value) : e.target.value;
+              if (record[field] !== val) {
+                saveMutation.mutate({ ...record, [field]: val });
+              }
+            }}
+            className="bg-transparent border-none focus:ring-1 focus:ring-purple-500 h-8 text-xs text-white p-1 w-full"
+          />
+        )}
+      </div>
     );
   };
 
@@ -157,58 +177,62 @@ export function SpreadsheetManager() {
         </Button>
       </CardHeader>
       <CardContent className="p-0 overflow-x-auto">
-        <Table className="min-w-[1500px]">
+        <Table className="min-w-[1600px] border-collapse">
           <TableHeader className="bg-white/10">
             <TableRow className="border-white/10">
-              <TableHead className="text-slate-300 text-xs font-bold w-[250px]">Cliente</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold w-[180px]">Usuário</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold w-[180px]">Senha</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold">Mês Venc.</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold">Status</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold w-[130px]">Próx. Renov.</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold w-[150px]">Contato</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold w-[200px]">Msg 1</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold w-[200px]">Msg 2</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold">Valor</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold">Despesa</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold">Lucro</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold">Assinatura</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold w-[120px]">Login (P2P/IPTV)</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Cliente</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Usuário</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Senha</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Mês Venc.</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Status</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Próx. Renov.</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Contato</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Msg 1</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Msg 2</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Valor</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Despesa</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Lucro</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Assinatura</TableHead>
+              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">P2P/IPTV</TableHead>
               <TableHead className="text-slate-300 text-xs font-bold w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {displayRecords.map((record, idx) => (
               <TableRow key={record.id || `new-${idx}`} className="border-white/5 hover:bg-white/5 transition-colors">
-                <TableCell className="p-1">{renderCell(record, "client_name", "text", "w-[240px]")}</TableCell>
-                <TableCell className="p-1">{renderCell(record, "username", "text", "w-[170px]")}</TableCell>
-                <TableCell className="p-1">{renderCell(record, "password", "text", "w-[170px]")}</TableCell>
-                <TableCell className="p-1">{renderCell(record, "expiry_month")}</TableCell>
-                <TableCell className="p-1">{renderCell(record, "status")}</TableCell>
-                <TableCell className="p-1">{renderCell(record, "next_renewal", "date")}</TableCell>
-                <TableCell className="p-1">{renderCell(record, "contact_number")}</TableCell>
-                <TableCell className="p-1">{renderCell(record, "message")}</TableCell>
-                <TableCell className="p-1">{renderCell(record, "message2")}</TableCell>
-                <TableCell className="p-1">{renderCell(record, "value", "number")}</TableCell>
-                <TableCell className="p-1">{renderCell(record, "expense", "number")}</TableCell>
-                <TableCell className="p-1">
-                  <span className="text-xs text-green-400 font-medium px-2">
-                    R$ {(record.profit || 0).toFixed(2)}
-                  </span>
+                <TableCell className="p-0">{renderCell(record, "client_name", "text", "w-[250px]")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "username", "text", "w-[180px]")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "password", "text", "w-[180px]")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "expiry_month", "text", "w-[120px]")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "status", "text", "w-[100px]")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "next_renewal", "date", "w-[140px]")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "contact_number", "text", "w-[160px]")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "message", "text", "w-[200px]")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "message2", "text", "w-[200px]")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "value", "number", "w-[90px]")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "expense", "number", "w-[90px]")}</TableCell>
+                <TableCell className="p-0">
+                  <div className="w-[100px] px-2 flex items-center h-8 border-r border-white/5">
+                    <span className="text-xs text-green-400 font-medium">
+                      R$ {(record.profit || 0).toFixed(2)}
+                    </span>
+                  </div>
                 </TableCell>
-                <TableCell className="p-1">{renderCell(record, "subscription_value", "number")}</TableCell>
-                <TableCell className="p-1">{renderCell(record, "login_type")}</TableCell>
-                <TableCell className="p-1">
-                  {record.id && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteMutation.mutate(record.id!)}
-                      className="h-8 w-8 text-slate-500 hover:text-red-400 hover:bg-red-400/10"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
+                <TableCell className="p-0">{renderCell(record, "subscription_value", "number", "w-[100px]")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "login_type", "text", "w-[100px]")}</TableCell>
+                <TableCell className="p-0">
+                  <div className="flex items-center justify-center h-8 w-[50px]">
+                    {record.id && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteMutation.mutate(record.id!)}
+                        className="h-6 w-6 text-slate-500 hover:text-red-400 hover:bg-red-400/10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
