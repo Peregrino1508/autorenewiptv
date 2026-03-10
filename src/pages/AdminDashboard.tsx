@@ -6,13 +6,14 @@ import { PlansManager } from "@/components/admin/PlansManager";
 import { PaymentsViewer } from "@/components/admin/PaymentsViewer";
 import { SettingsManager } from "@/components/admin/SettingsManager";
 import { IptvUsersManager } from "@/components/admin/IptvUsersManager";
+import { SpreadsheetManager } from "@/components/admin/SpreadsheetManager";
 import { CreateTrialDialog } from "@/components/admin/CreateTrialDialog";
 import { FinancialReports } from "@/components/admin/FinancialReports";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart, DollarSign, FileText, Menu } from "lucide-react";
+import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart, DollarSign, FileText, Menu, FileSpreadsheet } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -248,6 +249,13 @@ const AdminDashboard = () => {
                   <Settings className="w-4 h-4 mr-2" />
                   Configurações
                 </TabsTrigger>
+                <TabsTrigger 
+                  value="spreadsheet" 
+                  className="flex-1 min-w-[100px] md:min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm"
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Cadastro
+                </TabsTrigger>
               </TabsList>
 
           <TabsContent value="panels" className="mt-6">
@@ -272,6 +280,10 @@ const AdminDashboard = () => {
 
               <TabsContent value="settings" className="mt-6">
                 <SettingsManager />
+              </TabsContent>
+
+              <TabsContent value="spreadsheet" className="mt-6">
+                <SpreadsheetManager />
               </TabsContent>
             </Tabs>
           </CardContent>
