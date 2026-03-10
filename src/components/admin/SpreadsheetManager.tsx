@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -35,20 +35,6 @@ type CustomerRecord = {
 export function SpreadsheetManager() {
   const queryClient = useQueryClient();
   const [localRecords, setLocalRecords] = useState<Partial<CustomerRecord>[]>([]);
-  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
-    client_name: 250,
-    username: 180,
-    password: 180,
-    expiry_month: 120,
-    status: 100,
-    next_renewal: 140,
-    contact_number: 160,
-    value: 90,
-    expense: 90,
-    profit: 100,
-    subscription_value: 100,
-    login_type: 100,
-  });
 
   const { data: records, isLoading } = useQuery({
     queryKey: ["customer-records"],
@@ -65,6 +51,7 @@ export function SpreadsheetManager() {
 
   const saveMutation = useMutation({
     mutationFn: async (record: Partial<CustomerRecord>) => {
+      // Remove the generated 'profit' column as it cannot be updated manually
       const { profit, ...dataToSave } = record;
       
       if (record.id) {
@@ -84,7 +71,7 @@ export function SpreadsheetManager() {
       queryClient.invalidateQueries({ queryKey: ["customer-records"] });
       toast({ title: "Sucesso", description: "Registro salvo com sucesso!" });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
         title: "Erro",
         description: "Falha ao salvar: " + error.message,
@@ -124,22 +111,11 @@ export function SpreadsheetManager() {
     setLocalRecords([newRow, ...(records || [])]);
   };
 
-  const onResize = (field: string, deltaX: number) => {
-    setColumnWidths((prev) => ({
-      ...prev,
-      [field]: Math.max(50, prev[field] + deltaX),
-    }));
-  };
-
   const renderCell = (record: Partial<CustomerRecord>, field: keyof CustomerRecord, type: string = "text") => {
     const isText = type === "text";
-    const width = columnWidths[field as string] || 100;
     
     return (
-      <div 
-        className="h-full border-r border-white/10 overflow-hidden" 
-        style={{ width: `${width}px` }}
-      >
+      <div className="w-full border-r border-white/10">
         {isText ? (
           <textarea
             defaultValue={record[field] as any}
@@ -168,55 +144,17 @@ export function SpreadsheetManager() {
     );
   };
 
-  const ResizeHandle = ({ field }: { field: string }) => {
-    const onMouseDown = (e: React.MouseEvent) => {
-      e.preventDefault();
-      
-      let startX = e.pageX;
-      
-      const onMouseMove = (moveEvent: MouseEvent) => {
-        const deltaX = moveEvent.pageX - startX;
-        startX = moveEvent.pageX;
-        onResize(field, deltaX);
-      };
-
-      const onMouseUp = () => {
-        document.removeEventListener("mousemove", onMouseMove);
-        document.removeEventListener("mouseup", onMouseUp);
-      };
-
-      document.addEventListener("mousemove", onMouseMove);
-      document.addEventListener("mouseup", onMouseUp);
-    };
-
-    return (
-      <div
-        onMouseDown={onMouseDown}
-        className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-purple-500/50 transition-colors z-20 group"
-      >
-        <div className="absolute right-0 top-0 h-full w-[2px] bg-white/10 group-hover:bg-purple-500" />
-      </div>
-    );
-  };
-
-  const renderHeader = (label: string, field: string) => {
-    const width = columnWidths[field] || 100;
-    return (
-      <TableHead 
-        className="p-0 h-10 border-r border-white/10 text-slate-300 text-xs font-bold relative overflow-visible"
-        style={{ width: `${width}px` }}
-      >
-        <div className="flex items-center px-2 h-full w-full overflow-hidden select-none">
-          {label}
-        </div>
-        <ResizeHandle field={field} />
-      </TableHead>
-    );
-  };
-
   if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-purple-500" /></div>;
 
   const displayRecords = localRecords.length > (records?.length || 0) ? localRecords : (records || []);
+
+  const renderHeader = (label: string, initialWidth: string) => (
+    <TableHead className={`p-0 h-10 border-r border-white/10 text-slate-300 text-xs font-bold`}>
+      <div className={`flex items-center px-2 h-full overflow-hidden resize-x ${initialWidth}`}>
+        {label}
+      </div>
+    </TableHead>
+  );
 
   return (
     <Card className="bg-white/5 border-white/10 backdrop-blur-md overflow-hidden">
@@ -231,21 +169,21 @@ export function SpreadsheetManager() {
         </Button>
       </CardHeader>
       <CardContent className="p-0 overflow-x-auto">
-        <Table className="border-collapse table-fixed w-max">
+        <Table className="min-w-max border-collapse table-auto">
           <TableHeader className="bg-white/10">
             <TableRow className="border-white/10 h-10">
-              {renderHeader("Cliente", "client_name")}
-              {renderHeader("Usuário", "username")}
-              {renderHeader("Senha", "password")}
-              {renderHeader("Mês Venc.", "expiry_month")}
-              {renderHeader("Status", "status")}
-              {renderHeader("Próx. Renov.", "next_renewal")}
-              {renderHeader("Contato", "contact_number")}
-              {renderHeader("Valor", "value")}
-              {renderHeader("Despesa", "expense")}
-              {renderHeader("Lucro", "profit")}
-              {renderHeader("Assinatura", "subscription_value")}
-              {renderHeader("P2P/IPTV", "login_type")}
+              {renderHeader("Cliente", "w-[250px]")}
+              {renderHeader("Usuário", "w-[180px]")}
+              {renderHeader("Senha", "w-[180px]")}
+              {renderHeader("Mês Venc.", "w-[120px]")}
+              {renderHeader("Status", "w-[100px]")}
+              {renderHeader("Próx. Renov.", "w-[140px]")}
+              {renderHeader("Contato", "w-[160px]")}
+              {renderHeader("Valor", "w-[90px]")}
+              {renderHeader("Despesa", "w-[90px]")}
+              {renderHeader("Lucro", "w-[100px]")}
+              {renderHeader("Assinatura", "w-[100px]")}
+              {renderHeader("P2P/IPTV", "w-[100px]")}
               <TableHead className="w-[50px] p-0"></TableHead>
             </TableRow>
           </TableHeader>
@@ -262,11 +200,8 @@ export function SpreadsheetManager() {
                 <TableCell className="p-0">{renderCell(record, "value", "number")}</TableCell>
                 <TableCell className="p-0">{renderCell(record, "expense", "number")}</TableCell>
                 <TableCell className="p-0">
-                  <div 
-                    className="px-2 flex items-center h-8 border-r border-white/10 overflow-hidden"
-                    style={{ width: `${columnWidths.profit || 100}px` }}
-                  >
-                    <span className="text-xs text-green-400 font-medium whitespace-nowrap">
+                  <div className="px-2 flex items-center h-8 border-r border-white/10 w-full">
+                    <span className="text-xs text-green-400 font-medium">
                       R$ {(record.profit || 0).toFixed(2)}
                     </span>
                   </div>
