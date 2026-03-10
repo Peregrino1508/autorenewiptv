@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, Save, Loader2, FileSpreadsheet } from "lucide-react";
+import { Plus, Trash2, Loader2, FileSpreadsheet } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type CustomerRecord = {
@@ -24,8 +24,6 @@ type CustomerRecord = {
   status: string;
   next_renewal: string;
   contact_number: string;
-  message: string;
-  message2: string;
   value: number;
   expense: number;
   profit: number;
@@ -105,8 +103,6 @@ export function SpreadsheetManager() {
       status: "Ativo",
       next_renewal: new Date().toISOString().split("T")[0],
       contact_number: "",
-      message: "",
-      message2: "",
       value: 0,
       expense: 0,
       subscription_value: 0,
@@ -115,23 +111,11 @@ export function SpreadsheetManager() {
     setLocalRecords([newRow, ...(records || [])]);
   };
 
-  const handleLocalChange = (index: number, field: keyof CustomerRecord, value: any) => {
-    const updated = [...(records || [])];
-    if (localRecords.length > (records?.length || 0)) {
-        const newLocal = [...localRecords];
-        newLocal[index] = { ...newLocal[index], [field]: value };
-        setLocalRecords(newLocal);
-    } else {
-        // This logic needs to be more robust for a real spreadsheet
-        // For now, let's simplify and update the DB on blur or a save button
-    }
-  };
-
-  const renderCell = (record: Partial<CustomerRecord>, field: keyof CustomerRecord, type: string = "text", customClass: string = "") => {
+  const renderCell = (record: Partial<CustomerRecord>, field: keyof CustomerRecord, type: string = "text") => {
     const isText = type === "text";
     
     return (
-      <div className={`overflow-hidden resize-x border-r border-white/5 ${customClass ? customClass : 'min-w-[100px]'}`}>
+      <div className="w-full border-r border-white/10">
         {isText ? (
           <textarea
             defaultValue={record[field] as any}
@@ -140,7 +124,7 @@ export function SpreadsheetManager() {
                 saveMutation.mutate({ ...record, [field]: e.target.value });
               }
             }}
-            className="bg-transparent border-none focus:ring-1 focus:ring-purple-500 w-full h-8 text-xs text-white p-1 resize-none overflow-hidden hover:overflow-auto"
+            className="bg-transparent border-none focus:ring-1 focus:ring-purple-500 w-full h-8 text-xs text-white p-2 resize-none overflow-hidden hover:overflow-auto"
             rows={1}
           />
         ) : (
@@ -153,7 +137,7 @@ export function SpreadsheetManager() {
                 saveMutation.mutate({ ...record, [field]: val });
               }
             }}
-            className="bg-transparent border-none focus:ring-1 focus:ring-purple-500 h-8 text-xs text-white p-1 w-full"
+            className="bg-transparent border-none focus:ring-1 focus:ring-purple-500 h-8 text-xs text-white p-2 w-full"
           />
         )}
       </div>
@@ -163,6 +147,14 @@ export function SpreadsheetManager() {
   if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-purple-500" /></div>;
 
   const displayRecords = localRecords.length > (records?.length || 0) ? localRecords : (records || []);
+
+  const renderHeader = (label: string, initialWidth: string) => (
+    <TableHead className={`p-0 h-10 border-r border-white/10 text-slate-300 text-xs font-bold`}>
+      <div className={`flex items-center px-2 h-full overflow-hidden resize-x ${initialWidth}`}>
+        {label}
+      </div>
+    </TableHead>
+  );
 
   return (
     <Card className="bg-white/5 border-white/10 backdrop-blur-md overflow-hidden">
@@ -177,49 +169,45 @@ export function SpreadsheetManager() {
         </Button>
       </CardHeader>
       <CardContent className="p-0 overflow-x-auto">
-        <Table className="min-w-[1600px] border-collapse">
+        <Table className="min-w-max border-collapse table-auto">
           <TableHeader className="bg-white/10">
-            <TableRow className="border-white/10">
-              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Cliente</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Usuário</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Senha</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Mês Venc.</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Status</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Próx. Renov.</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Contato</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Msg 1</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Msg 2</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Valor</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Despesa</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Lucro</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">Assinatura</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold border-r border-white/10">P2P/IPTV</TableHead>
-              <TableHead className="text-slate-300 text-xs font-bold w-[50px]"></TableHead>
+            <TableRow className="border-white/10 h-10">
+              {renderHeader("Cliente", "w-[250px]")}
+              {renderHeader("Usuário", "w-[180px]")}
+              {renderHeader("Senha", "w-[180px]")}
+              {renderHeader("Mês Venc.", "w-[120px]")}
+              {renderHeader("Status", "w-[100px]")}
+              {renderHeader("Próx. Renov.", "w-[140px]")}
+              {renderHeader("Contato", "w-[160px]")}
+              {renderHeader("Valor", "w-[90px]")}
+              {renderHeader("Despesa", "w-[90px]")}
+              {renderHeader("Lucro", "w-[100px]")}
+              {renderHeader("Assinatura", "w-[100px]")}
+              {renderHeader("P2P/IPTV", "w-[100px]")}
+              <TableHead className="w-[50px] p-0"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {displayRecords.map((record, idx) => (
-              <TableRow key={record.id || `new-${idx}`} className="border-white/5 hover:bg-white/5 transition-colors">
-                <TableCell className="p-0">{renderCell(record, "client_name", "text", "w-[250px]")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "username", "text", "w-[180px]")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "password", "text", "w-[180px]")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "expiry_month", "text", "w-[120px]")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "status", "text", "w-[100px]")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "next_renewal", "date", "w-[140px]")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "contact_number", "text", "w-[160px]")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "message", "text", "w-[200px]")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "message2", "text", "w-[200px]")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "value", "number", "w-[90px]")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "expense", "number", "w-[90px]")}</TableCell>
+              <TableRow key={record.id || `new-${idx}`} className="border-white/5 hover:bg-white/5 transition-colors h-8">
+                <TableCell className="p-0">{renderCell(record, "client_name")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "username")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "password")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "expiry_month")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "status")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "next_renewal", "date")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "contact_number")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "value", "number")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "expense", "number")}</TableCell>
                 <TableCell className="p-0">
-                  <div className="w-[100px] px-2 flex items-center h-8 border-r border-white/5">
+                  <div className="px-2 flex items-center h-8 border-r border-white/10 w-full">
                     <span className="text-xs text-green-400 font-medium">
                       R$ {(record.profit || 0).toFixed(2)}
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className="p-0">{renderCell(record, "subscription_value", "number", "w-[100px]")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "login_type", "text", "w-[100px]")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "subscription_value", "number")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, "login_type")}</TableCell>
                 <TableCell className="p-0">
                   <div className="flex items-center justify-center h-8 w-[50px]">
                     {record.id && (
