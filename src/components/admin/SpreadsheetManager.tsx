@@ -286,8 +286,6 @@ export function SpreadsheetManager() {
       return;
     }
 
-    const nextDate = new Date();
-    // Encontrar o mês seguinte baseados no selecionado ou no atual
     const [monthName, yearStr] = selectedMonth.split(" ");
     const currentMonthIdx = MONTHS.indexOf(monthName);
     let nextMonthIdx = (currentMonthIdx + 1) % 12;
@@ -296,13 +294,30 @@ export function SpreadsheetManager() {
     
     const nextMonthName = `${MONTHS[nextMonthIdx]} ${nextYear}`;
 
-    if (confirm(`Deseja gerar a planilha de ${nextMonthName}? Os valores e despesas serão zerados.`)) {
-      const newRecords = records.map(({ id, created_at, profit, value, expense, ...rest }) => ({
-        ...rest,
-        value: 0,
-        expense: 0,
-        sheet_month: nextMonthName,
-      }));
+    if (confirm(`Deseja gerar a planilha de ${nextMonthName}? Os valores serão zerados e as datas de renovação serão atualizadas.`)) {
+      const newRecords = localRecords.map(({ id, created_at, profit, value, expense, status, expiry_month, next_renewal, ...rest }) => {
+        // Increment month logic
+        let newNextRenewal = next_renewal;
+        try {
+          const date = new Date(next_renewal + "T12:00:00");
+          if (!isNaN(date.getTime())) {
+            date.setMonth(date.setMonth(date.getMonth() + 1));
+            newNextRenewal = date.toISOString().split("T")[0];
+          }
+        } catch (e) {
+          console.error("Error incrementing date:", e);
+        }
+
+        return {
+          ...rest,
+          value: 0,
+          expense: 0,
+          status: "",
+          expiry_month: next_renewal, // Old renewal becomes expiry month
+          next_renewal: newNextRenewal, // New renewal is next month
+          sheet_month: nextMonthName,
+        };
+      });
 
       const { error } = await (supabase as any).from("customer_records").insert(newRecords);
 
@@ -314,6 +329,32 @@ export function SpreadsheetManager() {
         queryClient.invalidateQueries({ queryKey: ["available-months"] });
         toast({ title: "Sucesso", description: `Planilha de ${nextMonthName} criada!` });
       }
+    }
+  };
+
+  const handleDeleteMonth = async () => {
+    if (!confirm(`TEM CERTEZA que deseja excluir TODA a planilha de ${selectedMonth}? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await (supabase as any)
+        .from("customer_records")
+        .delete()
+        .eq("sheet_month", selectedMonth);
+
+      if (error) throw error;
+
+      toast({ title: "Sucesso", description: `Planilha de ${selectedMonth} excluída.` });
+      
+      // Try to fallback to current month or first available
+      const currentMonth = `${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()}`;
+      setSelectedMonth(currentMonth);
+      
+      queryClient.invalidateQueries({ queryKey: ["customer-records"] });
+      queryClient.invalidateQueries({ queryKey: ["available-months"] });
+    } catch (error: any) {
+      toast({ title: "Erro", description: "Falha ao excluir mês: " + error.message, variant: "destructive" });
     }
   };
 
@@ -352,7 +393,7 @@ export function SpreadsheetManager() {
           <textarea
             value={record[field] as string}
             onChange={(e) => updateLocalRecord(record.id, field, e.target.value)}
-            className={`bg-transparent border-none focus:ring-1 focus:ring-purple-500 w-full h-8 text-xs ${textColor} p-2 resize-none overflow-hidden hover:overflow-auto`}
+            className={`bg-transparent border-none focus:ring-1 focus:ring-purple-500 w-full h-8 text-xs ${textColor} p-2 resize-none overflow-hidden`}
             rows={1}
           />
         ) : (
@@ -379,7 +420,7 @@ export function SpreadsheetManager() {
       className={`p-0 h-10 border-r border-white/10 text-slate-300 text-xs font-bold cursor-pointer hover:bg-white/5 transition-colors`}
       onClick={sortKey ? () => handleSort(sortKey) : undefined}
     >
-      <div className={`flex items-center justify-between px-2 h-full overflow-hidden resize-x ${initialWidth}`}>
+      <div className={`flex items-center justify-between px-2 h-full overflow-hidden ${initialWidth}`}>
         <span>{label}</span>
         {sortKey && (
           <div className="flex flex-col ml-1">
@@ -411,6 +452,15 @@ export function SpreadsheetManager() {
                 ))}
               </SelectContent>
             </Select>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleDeleteMonth}
+              className="h-8 w-8 text-slate-500 hover:text-red-400 hover:bg-red-400/10"
+              title="Excluir este mês"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
           </div>
         </div>
         <div className="flex items-center gap-2">
