@@ -12,8 +12,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, Loader2, FileSpreadsheet } from "lucide-react";
+import { Plus, Trash2, Loader2, FileSpreadsheet, ChevronDown, ChevronUp, Palette, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 type CustomerRecord = {
   id: string;
@@ -29,24 +37,69 @@ type CustomerRecord = {
   profit: number;
   subscription_value: number;
   login_type: string;
+  sheet_month: string;
+  text_color?: string;
   created_at: string;
 };
+
+const MONTHS = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+];
+
+const COLORS = [
+  { name: "Branco", value: "text-white" },
+  { name: "Verde", value: "text-green-400" },
+  { name: "Azul", value: "text-blue-400" },
+  { name: "Amarelo", value: "text-yellow-400" },
+  { name: "Vermelho", value: "text-red-400" },
+  { name: "Roxo", value: "text-purple-400" },
+  { name: "Turquesa", value: "text-cyan-400" },
+];
 
 export function SpreadsheetManager() {
   const queryClient = useQueryClient();
   const [localRecords, setLocalRecords] = useState<Partial<CustomerRecord>[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState(`${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()}`);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof CustomerRecord; direction: 'asc' | 'desc' } | null>(null);
 
   const { data: records, isLoading } = useQuery({
-    queryKey: ["customer-records"],
+    queryKey: ["customer-records", selectedMonth],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customer_records")
         .select("*")
-        .order("created_at", { ascending: false });
+        .eq("sheet_month", selectedMonth);
 
       if (error) throw error;
       return data as CustomerRecord[];
     },
+  });
+
+  const availableMonths = useQuery({
+    queryKey: ["available-months"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customer_records")
+        .select("sheet_month")
+        .not("sheet_month", "is", null);
+      
+      if (error) throw error;
+      const uniqueMonths = Array.from(new Set((data as any[]).map(item => item.sheet_month)));
+      // Garante que o mês atual esteja na lista se ainda não houver registros
+      const currentMonth = `${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()}`;
+      if (!uniqueMonths.includes(currentMonth)) {
+        uniqueMonths.push(currentMonth);
+      }
+
+      // Ordenação cronológica: por ano e depois pelo índice do mês
+      return uniqueMonths.sort((a, b) => {
+        const [monthA, yearA] = a.split(" ");
+        const [monthB, yearB] = b.split(" ");
+        if (yearA !== yearB) return yearA.localeCompare(yearB);
+        return MONTHS.indexOf(monthA) - MONTHS.indexOf(monthB);
+      });
+    }
   });
 
   const saveMutation = useMutation({
@@ -55,13 +108,13 @@ export function SpreadsheetManager() {
       const { profit, ...dataToSave } = record;
       
       if (record.id) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("customer_records")
           .update(dataToSave)
           .eq("id", record.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("customer_records")
           .insert([dataToSave]);
         if (error) throw error;
@@ -82,7 +135,7 @@ export function SpreadsheetManager() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("customer_records")
         .delete()
         .eq("id", id);
@@ -107,15 +160,76 @@ export function SpreadsheetManager() {
       expense: 0,
       subscription_value: 0,
       login_type: "IPTV",
+      sheet_month: selectedMonth,
+      text_color: "text-white",
     };
     setLocalRecords([newRow, ...(records || [])]);
   };
 
+  const handleNewSheet = async () => {
+    if (!records || records.length === 0) {
+      toast({ title: "Aviso", description: "Não há registros no mês atual para clonar." });
+      return;
+    }
+
+    const nextDate = new Date();
+    // Encontrar o mês seguinte baseados no selecionado ou no atual
+    const [monthName, yearStr] = selectedMonth.split(" ");
+    const currentMonthIdx = MONTHS.indexOf(monthName);
+    let nextMonthIdx = (currentMonthIdx + 1) % 12;
+    let nextYear = parseInt(yearStr);
+    if (nextMonthIdx === 0) nextYear++;
+    
+    const nextMonthName = `${MONTHS[nextMonthIdx]} ${nextYear}`;
+
+    if (confirm(`Deseja gerar a planilha de ${nextMonthName}? Os valores e despesas serão zerados.`)) {
+      const newRecords = records.map(({ id, created_at, profit, value, expense, ...rest }) => ({
+        ...rest,
+        value: 0,
+        expense: 0,
+        sheet_month: nextMonthName,
+      }));
+
+      const { error } = await (supabase as any).from("customer_records").insert(newRecords);
+
+      if (error) {
+        toast({ title: "Erro", description: "Falha ao criar nova planilha: " + error.message, variant: "destructive" });
+      } else {
+        setSelectedMonth(nextMonthName);
+        queryClient.invalidateQueries({ queryKey: ["customer-records"] });
+        queryClient.invalidateQueries({ queryKey: ["available-months"] });
+        toast({ title: "Sucesso", description: `Planilha de ${nextMonthName} criada!` });
+      }
+    }
+  };
+
+  const handleSort = (key: keyof CustomerRecord) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedRecords = [...(records || [])].sort((a, b) => {
+    if (!sortConfig) return 0;
+    const { key, direction } = sortConfig;
+    const aVal = a[key];
+    const bVal = b[key];
+    
+    if (aVal === undefined || bVal === undefined) return 0;
+    
+    if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+    if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
   const renderCell = (record: Partial<CustomerRecord>, field: keyof CustomerRecord, type: string = "text") => {
     const isText = type === "text";
+    const textColor = record.text_color || "text-white";
     
     return (
-      <div className="w-full border-r border-white/10">
+      <div className={`w-full border-r border-white/10 ${textColor}`}>
         {isText ? (
           <textarea
             defaultValue={record[field] as any}
@@ -124,7 +238,7 @@ export function SpreadsheetManager() {
                 saveMutation.mutate({ ...record, [field]: e.target.value });
               }
             }}
-            className="bg-transparent border-none focus:ring-1 focus:ring-purple-500 w-full h-8 text-xs text-white p-2 resize-none overflow-hidden hover:overflow-auto"
+            className={`bg-transparent border-none focus:ring-1 focus:ring-purple-500 w-full h-8 text-xs ${textColor} p-2 resize-none overflow-hidden hover:overflow-auto`}
             rows={1}
           />
         ) : (
@@ -137,7 +251,7 @@ export function SpreadsheetManager() {
                 saveMutation.mutate({ ...record, [field]: val });
               }
             }}
-            className="bg-transparent border-none focus:ring-1 focus:ring-purple-500 h-8 text-xs text-white p-2 w-full"
+            className={`bg-transparent border-none focus:ring-1 focus:ring-purple-500 h-8 text-xs ${textColor} p-2 w-full`}
           />
         )}
       </div>
@@ -146,45 +260,75 @@ export function SpreadsheetManager() {
 
   if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-purple-500" /></div>;
 
-  const displayRecords = localRecords.length > (records?.length || 0) ? localRecords : (records || []);
+  const displayRecords = localRecords.length > (records?.length || 0) ? localRecords : sortedRecords;
 
-  const renderHeader = (label: string, initialWidth: string) => (
-    <TableHead className={`p-0 h-10 border-r border-white/10 text-slate-300 text-xs font-bold`}>
-      <div className={`flex items-center px-2 h-full overflow-hidden resize-x ${initialWidth}`}>
-        {label}
+  const renderHeader = (label: string, initialWidth: string, sortKey?: keyof CustomerRecord) => (
+    <TableHead 
+      className={`p-0 h-10 border-r border-white/10 text-slate-300 text-xs font-bold cursor-pointer hover:bg-white/5 transition-colors`}
+      onClick={sortKey ? () => handleSort(sortKey) : undefined}
+    >
+      <div className={`flex items-center justify-between px-2 h-full overflow-hidden resize-x ${initialWidth}`}>
+        <span>{label}</span>
+        {sortKey && (
+          <div className="flex flex-col ml-1">
+            <ChevronUp className={`w-3 h-3 -mb-1 ${sortConfig?.key === sortKey && sortConfig.direction === 'asc' ? 'text-purple-400' : 'text-slate-600'}`} />
+            <ChevronDown className={`w-3 h-3 ${sortConfig?.key === sortKey && sortConfig.direction === 'desc' ? 'text-purple-400' : 'text-slate-600'}`} />
+          </div>
+        )}
       </div>
     </TableHead>
   );
 
   return (
     <Card className="bg-white/5 border-white/10 backdrop-blur-md overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-white flex items-center gap-2">
-          <FileSpreadsheet className="w-5 h-5 text-green-400" />
-          Cadastro de Usuários (Planilha)
-        </CardTitle>
-        <Button onClick={handleAddRow} className="bg-green-600 hover:bg-green-700 text-white size-sm">
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Linha
-        </Button>
+      <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <CardTitle className="text-white flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5 text-green-400" />
+            Cadastro de Usuários (Planilha)
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-slate-400" />
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[180px] h-8 bg-white/5 border-white/10 text-xs text-white">
+                <SelectValue placeholder="Selecione o mês" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-white/10 text-white">
+                {availableMonths.data?.map(month => (
+                  <SelectItem key={month} value={month}>{month}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleNewSheet} variant="outline" className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 h-9 px-3 text-xs">
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Planilha
+          </Button>
+          <Button onClick={handleAddRow} className="bg-green-600 hover:bg-green-700 text-white h-9 px-3 text-xs">
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Linha
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="p-0 overflow-x-auto">
         <Table className="min-w-max border-collapse table-auto">
           <TableHeader className="bg-white/10">
             <TableRow className="border-white/10 h-10">
-              {renderHeader("Cliente", "w-[250px]")}
-              {renderHeader("Usuário", "w-[180px]")}
-              {renderHeader("Senha", "w-[180px]")}
-              {renderHeader("Mês Venc.", "w-[120px]")}
-              {renderHeader("Status", "w-[100px]")}
-              {renderHeader("Próx. Renov.", "w-[140px]")}
-              {renderHeader("Contato", "w-[160px]")}
-              {renderHeader("Valor", "w-[90px]")}
-              {renderHeader("Despesa", "w-[90px]")}
-              {renderHeader("Lucro", "w-[100px]")}
-              {renderHeader("Assinatura", "w-[100px]")}
-              {renderHeader("P2P/IPTV", "w-[100px]")}
-              <TableHead className="w-[50px] p-0"></TableHead>
+              {renderHeader("Cliente", "w-[250px]", "client_name")}
+              {renderHeader("Usuário", "w-[180px]", "username")}
+              {renderHeader("Senha", "w-[180px]", "password")}
+              {renderHeader("Mês Venc.", "w-[120px]", "expiry_month")}
+              {renderHeader("Status", "w-[100px]", "status")}
+              {renderHeader("Próx. Renov.", "w-[140px]", "next_renewal")}
+              {renderHeader("Contato", "w-[160px]", "contact_number")}
+              {renderHeader("Valor", "w-[90px]", "value")}
+              {renderHeader("Despesa", "w-[90px]", "expense")}
+              {renderHeader("Lucro", "w-[100px]", "profit")}
+              {renderHeader("Assinatura", "w-[100px]", "subscription_value")}
+              {renderHeader("P2P/IPTV", "w-[100px]", "login_type")}
+              <TableHead className="w-[80px] p-0"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -209,7 +353,28 @@ export function SpreadsheetManager() {
                 <TableCell className="p-0">{renderCell(record, "subscription_value", "number")}</TableCell>
                 <TableCell className="p-0">{renderCell(record, "login_type")}</TableCell>
                 <TableCell className="p-0">
-                  <div className="flex items-center justify-center h-8 w-[50px]">
+                  <div className="flex items-center justify-center gap-1 h-8 w-[80px]">
+                    {record.id && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-white">
+                            <Palette className="w-4 h-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-40 bg-slate-900 border-white/10 p-2">
+                          <div className="grid grid-cols-4 gap-2">
+                            {COLORS.map((color) => (
+                              <button
+                                key={color.value}
+                                className={`w-6 h-6 rounded-full border border-white/20 ${color.value.replace('text-', 'bg-')}`}
+                                onClick={() => saveMutation.mutate({ ...record, text_color: color.value })}
+                                title={color.name}
+                              />
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    )}
                     {record.id && (
                       <Button
                         variant="ghost"

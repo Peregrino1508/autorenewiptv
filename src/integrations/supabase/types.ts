@@ -56,6 +56,63 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_records: {
+        Row: {
+          id: string
+          client_name: string
+          username: string
+          password: string
+          expiry_month: string
+          status: string
+          next_renewal: string
+          contact_number: string
+          value: number
+          expense: number
+          profit: number
+          subscription_value: number
+          login_type: string
+          sheet_month: string
+          text_color: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          client_name: string
+          username: string
+          password: string
+          expiry_month: string
+          status?: string
+          next_renewal: string
+          contact_number: string
+          value?: number
+          expense?: number
+          profit?: number
+          subscription_value?: number
+          login_type?: string
+          sheet_month?: string
+          text_color?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          client_name?: string
+          username?: string
+          password?: string
+          expiry_month?: string
+          status?: string
+          next_renewal?: string
+          contact_number?: string
+          value?: number
+          expense?: number
+          profit?: number
+          subscription_value?: number
+          login_type?: string
+          sheet_month?: string
+          text_color?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       iptv_users: {
         Row: {
           amount_due: number
