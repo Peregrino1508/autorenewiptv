@@ -169,42 +169,63 @@ export function SpreadsheetManager() {
   };
 
   const handleSave = async () => {
+    let recordsSuccess = false;
+    let settingsError = null;
+
     try {
       setIsSaving(true);
       
-      // Save all records
-      for (const record of localRecords) {
-        const { profit, ...dataToSave } = record;
-        if (record.id.startsWith('temp-')) {
-          // New record
-          const { id, ...insertData } = dataToSave;
+      // Save records (sequentially for now to maintain logic, but with error handling)
+      const recordsToSave = localRecords.map(r => {
+        const { profit, ...data } = r;
+        return data;
+      });
+
+      for (const data of recordsToSave) {
+        if (data.id.startsWith('temp-')) {
+          const { id, ...insertData } = data;
           const { error } = await (supabase as any).from("customer_records").insert([insertData]);
           if (error) throw error;
         } else {
-          // Update existing
           const { error } = await (supabase as any)
             .from("customer_records")
-            .update(dataToSave)
-            .eq("id", record.id);
+            .update(data)
+            .eq("id", data.id);
           if (error) throw error;
         }
       }
+      
+      recordsSuccess = true;
 
-      // Save settings
-      await settingsMutation.mutateAsync({
-        last_selected_month: selectedMonth,
-        sort_key: sortConfig?.key,
-        sort_direction: sortConfig?.direction
-      });
+      // Try to save settings separately
+      try {
+        await settingsMutation.mutateAsync({
+          last_selected_month: selectedMonth,
+          sort_key: sortConfig?.key,
+          sort_direction: sortConfig?.direction
+        });
+      } catch (err: any) {
+        console.error("Settings save error:", err);
+        settingsError = err.message;
+      }
 
       queryClient.invalidateQueries({ queryKey: ["customer-records"] });
       queryClient.invalidateQueries({ queryKey: ["available-months"] });
       setIsDirty(false);
-      toast({ title: "Sucesso", description: "Todas as alterações foram salvas!" });
+      
+      if (settingsError) {
+        toast({ 
+          title: "Parcialmente Salvo", 
+          description: `Os registros foram salvos, mas houve um erro nas configurações: ${settingsError}. Verifique se a tabela 'spreadsheet_settings' existe no banco de dados.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({ title: "Sucesso", description: "Todas as alterações foram salvas!" });
+      }
     } catch (error: any) {
       toast({
-        title: "Erro",
-        description: "Falha ao salvar: " + error.message,
+        title: "Erro ao Salvar",
+        description: "Falha ao salvar registros: " + error.message,
         variant: "destructive",
       });
     } finally {
