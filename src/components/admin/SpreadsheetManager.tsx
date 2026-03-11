@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -59,9 +59,60 @@ const COLORS = [
 
 export function SpreadsheetManager() {
   const queryClient = useQueryClient();
-  const [localRecords, setLocalRecords] = useState<Partial<CustomerRecord>[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(`${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()}`);
   const [sortConfig, setSortConfig] = useState<{ key: keyof CustomerRecord; direction: 'asc' | 'desc' } | null>(null);
+
+  // Load settings
+  const { data: settings } = useQuery({
+    queryKey: ["spreadsheet-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("spreadsheet_settings")
+        .select("*")
+        .eq("id", '00000000-0000-0000-0000-000000000000')
+        .maybeSingle(); // Use maybeSingle to avoid errors if empty
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Apply settings on load
+  useEffect(() => {
+    if (settings) {
+      if (settings.last_selected_month) setSelectedMonth(settings.last_selected_month);
+      if (settings.sort_key && settings.sort_direction) {
+        setSortConfig({ 
+          key: settings.sort_key as keyof CustomerRecord, 
+          direction: settings.sort_direction as 'asc' | 'desc' 
+        });
+      }
+    }
+  }, [settings]);
+
+  const settingsMutation = useMutation({
+    mutationFn: async (newSettings: any) => {
+      const { error } = await supabase
+        .from("spreadsheet_settings")
+        .update(newSettings)
+        .eq("id", '00000000-0000-0000-0000-000000000000');
+      if (error) throw error;
+    },
+  });
+
+  const handleMonthChange = (month: string) => {
+    setSelectedMonth(month);
+    settingsMutation.mutate({ last_selected_month: month });
+  };
+
+  const handleSort = (key: keyof CustomerRecord) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+    settingsMutation.mutate({ sort_key: key, sort_direction: direction });
+  };
 
   const { data: records, isLoading } = useQuery({
     queryKey: ["customer-records", selectedMonth],
@@ -163,7 +214,7 @@ export function SpreadsheetManager() {
       sheet_month: selectedMonth,
       text_color: "text-white",
     };
-    setLocalRecords([newRow, ...(records || [])]);
+    saveMutation.mutate(newRow);
   };
 
   const handleNewSheet = async () => {
@@ -203,13 +254,7 @@ export function SpreadsheetManager() {
     }
   };
 
-  const handleSort = (key: keyof CustomerRecord) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
+  // handleSort removed and replaced above
 
   const sortedRecords = [...(records || [])].sort((a, b) => {
     if (!sortConfig) return 0;
@@ -260,7 +305,7 @@ export function SpreadsheetManager() {
 
   if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-purple-500" /></div>;
 
-  const displayRecords = localRecords.length > (records?.length || 0) ? localRecords : sortedRecords;
+  const displayRecords = sortedRecords;
 
   const renderHeader = (label: string, initialWidth: string, sortKey?: keyof CustomerRecord) => (
     <TableHead 
@@ -289,7 +334,7 @@ export function SpreadsheetManager() {
           </CardTitle>
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-slate-400" />
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <Select value={selectedMonth} onValueChange={handleMonthChange}>
               <SelectTrigger className="w-[180px] h-8 bg-white/5 border-white/10 text-xs text-white">
                 <SelectValue placeholder="Selecione o mês" />
               </SelectTrigger>

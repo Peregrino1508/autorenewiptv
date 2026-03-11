@@ -339,6 +339,30 @@ export type Database = {
         }
         Relationships: []
       }
+      spreadsheet_settings: {
+        Row: {
+          id: string
+          last_selected_month: string | null
+          sort_key: string | null
+          sort_direction: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          last_selected_month?: string | null
+          sort_key?: string | null
+          sort_direction?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          last_selected_month?: string | null
+          sort_key?: string | null
+          sort_direction?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
