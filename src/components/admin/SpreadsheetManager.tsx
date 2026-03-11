@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, Loader2, FileSpreadsheet, ChevronDown, ChevronUp, Palette, Calendar } from "lucide-react";
+import { Plus, Trash2, Loader2, FileSpreadsheet, ChevronDown, ChevronUp, Palette, Calendar, Save, RotateCcw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -61,6 +61,9 @@ export function SpreadsheetManager() {
   const queryClient = useQueryClient();
   const [selectedMonth, setSelectedMonth] = useState(`${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()}`);
   const [sortConfig, setSortConfig] = useState<{ key: keyof CustomerRecord; direction: 'asc' | 'desc' } | null>(null);
+  const [localRecords, setLocalRecords] = useState<CustomerRecord[]>([]);
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Load settings
   const { data: settings } = useQuery({
@@ -76,43 +79,6 @@ export function SpreadsheetManager() {
       return data;
     },
   });
-
-  // Apply settings on load
-  useEffect(() => {
-    if (settings) {
-      if (settings.last_selected_month) setSelectedMonth(settings.last_selected_month);
-      if (settings.sort_key && settings.sort_direction) {
-        setSortConfig({ 
-          key: settings.sort_key as keyof CustomerRecord, 
-          direction: settings.sort_direction as 'asc' | 'desc' 
-        });
-      }
-    }
-  }, [settings]);
-
-  const settingsMutation = useMutation({
-    mutationFn: async (newSettings: any) => {
-      const { error } = await supabase
-        .from("spreadsheet_settings")
-        .update(newSettings)
-        .eq("id", '00000000-0000-0000-0000-000000000000');
-      if (error) throw error;
-    },
-  });
-
-  const handleMonthChange = (month: string) => {
-    setSelectedMonth(month);
-    settingsMutation.mutate({ last_selected_month: month });
-  };
-
-  const handleSort = (key: keyof CustomerRecord) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-    settingsMutation.mutate({ sort_key: key, sort_direction: direction });
-  };
 
   const { data: records, isLoading } = useQuery({
     queryKey: ["customer-records", selectedMonth],
@@ -153,39 +119,105 @@ export function SpreadsheetManager() {
     }
   });
 
-  const saveMutation = useMutation({
-    mutationFn: async (record: Partial<CustomerRecord>) => {
-      // Remove the generated 'profit' column as it cannot be updated manually
-      const { profit, ...dataToSave } = record;
-      
-      if (record.id) {
-        const { error } = await (supabase as any)
-          .from("customer_records")
-          .update(dataToSave)
-          .eq("id", record.id);
-        if (error) throw error;
-      } else {
-        const { error } = await (supabase as any)
-          .from("customer_records")
-          .insert([dataToSave]);
-        if (error) throw error;
+  const settingsMutation = useMutation({
+    mutationFn: async (newSettings: any) => {
+      const { error } = await supabase
+        .from("spreadsheet_settings")
+        .update(newSettings)
+        .eq("id", '00000000-0000-0000-0000-000000000000');
+      if (error) throw error;
+    },
+  });
+
+  // Apply settings on load
+  useEffect(() => {
+    if (settings) {
+      if (settings.last_selected_month) setSelectedMonth(settings.last_selected_month);
+      if (settings.sort_key && settings.sort_direction) {
+        setSortConfig({ 
+          key: settings.sort_key as keyof CustomerRecord, 
+          direction: settings.sort_direction as 'asc' | 'desc' 
+        });
       }
-    },
-    onSuccess: () => {
+    }
+  }, [settings]);
+
+  useEffect(() => {
+    if (records) {
+      setLocalRecords(records);
+      setIsDirty(false);
+    }
+  }, [records]);
+
+  const handleMonthChange = (month: string) => {
+    if (isDirty) {
+      if (!confirm("Você tem alterações não salvas. Deseja mudar de mês e perder as alterações?")) {
+        return;
+      }
+    }
+    setSelectedMonth(month);
+    setIsDirty(false);
+  };
+
+  const handleSort = (key: keyof CustomerRecord) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+    setIsDirty(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      
+      // Save all records
+      for (const record of localRecords) {
+        const { profit, ...dataToSave } = record;
+        if (record.id.startsWith('temp-')) {
+          // New record
+          const { id, ...insertData } = dataToSave;
+          const { error } = await (supabase as any).from("customer_records").insert([insertData]);
+          if (error) throw error;
+        } else {
+          // Update existing
+          const { error } = await (supabase as any)
+            .from("customer_records")
+            .update(dataToSave)
+            .eq("id", record.id);
+          if (error) throw error;
+        }
+      }
+
+      // Save settings
+      await settingsMutation.mutateAsync({
+        last_selected_month: selectedMonth,
+        sort_key: sortConfig?.key,
+        sort_direction: sortConfig?.direction
+      });
+
       queryClient.invalidateQueries({ queryKey: ["customer-records"] });
-      toast({ title: "Sucesso", description: "Registro salvo com sucesso!" });
-    },
-    onError: (error) => {
+      queryClient.invalidateQueries({ queryKey: ["available-months"] });
+      setIsDirty(false);
+      toast({ title: "Sucesso", description: "Todas as alterações foram salvas!" });
+    } catch (error: any) {
       toast({
         title: "Erro",
         description: "Falha ao salvar: " + error.message,
         variant: "destructive",
       });
-    },
-  });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      if (id.startsWith('temp-')) {
+        setLocalRecords(prev => prev.filter(r => r.id !== id));
+        return;
+      }
       const { error } = await (supabase as any)
         .from("customer_records")
         .delete()
@@ -199,7 +231,8 @@ export function SpreadsheetManager() {
   });
 
   const handleAddRow = () => {
-    const newRow: Partial<CustomerRecord> = {
+    const newRow: CustomerRecord = {
+      id: `temp-${Date.now()}`,
       client_name: "",
       username: "",
       password: "",
@@ -209,16 +242,25 @@ export function SpreadsheetManager() {
       contact_number: "",
       value: 0,
       expense: 0,
+      profit: 0,
       subscription_value: 0,
       login_type: "IPTV",
       sheet_month: selectedMonth,
       text_color: "text-white",
+      created_at: new Date().toISOString(),
     };
-    saveMutation.mutate(newRow);
+    setLocalRecords(prev => [...prev, newRow]);
+    setIsDirty(true);
   };
 
   const handleNewSheet = async () => {
-    if (!records || records.length === 0) {
+    if (isDirty) {
+      if (!confirm("Você tem alterações não salvas. Deseja criar uma nova planilha sem salvar as alterações atuais?")) {
+        return;
+      }
+    }
+
+    if (!localRecords || localRecords.length === 0) {
       toast({ title: "Aviso", description: "Não há registros no mês atual para clonar." });
       return;
     }
@@ -256,7 +298,7 @@ export function SpreadsheetManager() {
 
   // handleSort removed and replaced above
 
-  const sortedRecords = [...(records || [])].sort((a, b) => {
+  const sortedRecords = [...localRecords].sort((a, b) => {
     if (!sortConfig) return 0;
     const { key, direction } = sortConfig;
     const aVal = a[key];
@@ -269,7 +311,17 @@ export function SpreadsheetManager() {
     return 0;
   });
 
-  const renderCell = (record: Partial<CustomerRecord>, field: keyof CustomerRecord, type: string = "text") => {
+  const updateLocalRecord = (id: string, field: keyof CustomerRecord, value: any) => {
+    setLocalRecords(prev => prev.map(r => {
+      if (r.id === id) {
+        return { ...r, [field]: value };
+      }
+      return r;
+    }));
+    setIsDirty(true);
+  };
+
+  const renderCell = (record: CustomerRecord, field: keyof CustomerRecord, type: string = "text") => {
     const isText = type === "text";
     const textColor = record.text_color || "text-white";
     
@@ -277,24 +329,18 @@ export function SpreadsheetManager() {
       <div className={`w-full border-r border-white/10 ${textColor}`}>
         {isText ? (
           <textarea
-            defaultValue={record[field] as any}
-            onBlur={(e) => {
-              if (record[field] !== e.target.value) {
-                saveMutation.mutate({ ...record, [field]: e.target.value });
-              }
-            }}
+            value={record[field] as string}
+            onChange={(e) => updateLocalRecord(record.id, field, e.target.value)}
             className={`bg-transparent border-none focus:ring-1 focus:ring-purple-500 w-full h-8 text-xs ${textColor} p-2 resize-none overflow-hidden hover:overflow-auto`}
             rows={1}
           />
         ) : (
           <Input
             type={type}
-            defaultValue={record[field] as any}
-            onBlur={(e) => {
-              const val = type === "number" ? parseFloat(e.target.value) : e.target.value;
-              if (record[field] !== val) {
-                saveMutation.mutate({ ...record, [field]: val });
-              }
+            value={record[field] as any}
+            onChange={(e) => {
+              const val = type === "number" ? parseFloat(e.target.value) || 0 : e.target.value;
+              updateLocalRecord(record.id, field, val);
             }}
             className={`bg-transparent border-none focus:ring-1 focus:ring-purple-500 h-8 text-xs ${textColor} p-2 w-full`}
           />
@@ -347,6 +393,27 @@ export function SpreadsheetManager() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {isDirty && (
+            <Button 
+              onClick={() => {
+                if (records) setLocalRecords(records);
+                setIsDirty(false);
+              }} 
+              variant="ghost" 
+              className="text-slate-400 hover:text-white h-9 px-3 text-xs"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Descartar
+            </Button>
+          )}
+          <Button 
+            onClick={handleSave} 
+            disabled={!isDirty || isSaving}
+            className={`${isDirty ? 'bg-purple-600 hover:bg-purple-700 animate-pulse' : 'bg-slate-700'} text-white h-9 px-3 text-xs`}
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            Salvar
+          </Button>
           <Button onClick={handleNewSheet} variant="outline" className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 h-9 px-3 text-xs">
             <Plus className="w-4 h-4 mr-2" />
             Nova Planilha
@@ -412,7 +479,7 @@ export function SpreadsheetManager() {
                               <button
                                 key={color.value}
                                 className={`w-6 h-6 rounded-full border border-white/20 ${color.value.replace('text-', 'bg-')}`}
-                                onClick={() => saveMutation.mutate({ ...record, text_color: color.value })}
+                                onClick={() => updateLocalRecord(record.id, 'text_color', color.value)}
                                 title={color.name}
                               />
                             ))}
