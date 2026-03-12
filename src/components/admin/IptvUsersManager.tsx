@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Edit, Trash2, User, Copy, ExternalLink } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
-type IptvUser = Tables<"iptv_users"> & { plan_id?: string | null };
+type IptvUser = Tables<"iptv_users">;
 
 export function IptvUsersManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
