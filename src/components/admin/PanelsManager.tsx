@@ -47,40 +47,17 @@ export function PanelsManager() {
   // Create/Update panel mutation
   const savePanel = useMutation({
     mutationFn: async (panel: typeof formData & { id?: string }) => {
-      const { test_button_name, ...otherData } = panel;
-      
-      try {
-        if (panel.id) {
-          const { error } = await supabase
-            .from("iptv_panels")
-            .update(panel as any)
-            .eq("id", panel.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase
-            .from("iptv_panels")
-            .insert([panel as any]);
-          if (error) throw error;
-        }
-      } catch (error: any) {
-        // Fallback if column doesn't exist yet
-        if (error.message?.includes("test_button_name") || error.code === "PGRST204") {
-          console.warn("Coluna test_button_name não encontrada, tentando salvar sem ela...");
-          if (panel.id) {
-            const { error: retryError } = await supabase
-              .from("iptv_panels")
-              .update(otherData as any)
-              .eq("id", panel.id);
-            if (retryError) throw retryError;
-          } else {
-            const { error: retryError } = await supabase
-              .from("iptv_panels")
-              .insert([otherData as any]);
-            if (retryError) throw retryError;
-          }
-        } else {
-          throw error;
-        }
+      if (panel.id) {
+        const { error } = await supabase
+          .from("iptv_panels")
+          .update(panel as any)
+          .eq("id", panel.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("iptv_panels")
+          .insert([panel as any]);
+        if (error) throw error;
       }
     },
     onSuccess: () => {
