@@ -92,6 +92,7 @@ const AdminDashboard = () => {
                 </SheetHeader>
                 <div className="flex flex-col gap-4">
                   <CreateTrialDialog />
+                  <CreateTrialWWPanelDialog />
                   <Button
                     onClick={() => navigate("/checkout")}
                     variant="outline"
