@@ -84,6 +84,7 @@ export function CreateTrialWWPanelDialog() {
   const resetDialog = () => {
     setResult(null);
     setNotes("");
+    setTestType("wplay");
   };
 
   return (
