@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { FlaskConical, Loader2, Play } from "lucide-react";
+import { FlaskConical, Loader2, Play, Copy, CheckCircle2, MonitorPlay } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Panel = Tables<"iptv_panels">;
@@ -167,20 +167,70 @@ export function CreateTrialWWPanelDialog() {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="bg-green-900/30 border border-green-600/30 rounded-lg p-4">
-              <h3 className="text-green-400 font-bold mb-3">✅ Teste WPlay criado!</h3>
-              <div className="space-y-2 text-sm">
-                <pre className="text-xs text-slate-400 bg-slate-800 p-2 rounded overflow-auto max-h-48">
-                  {JSON.stringify(result, null, 2)}
-                </pre>
+          <div className="space-y-6 py-2">
+            <div className="relative overflow-hidden bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 text-center space-y-4">
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <MonitorPlay className="w-16 h-16" />
+              </div>
+              
+              <div className="space-y-1">
+                <h3 className="text-emerald-400 font-bold text-lg flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-5 h-5" />
+                  Teste WPlay P2P/IPTV Criado
+                </h3>
+                <p className="text-slate-400 text-sm font-medium">🚀 Bem vindo a R6TV</p>
+              </div>
+
+              <div className="grid gap-3 pt-2">
+                <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 flex items-center justify-between group">
+                  <div className="text-left">
+                    <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Usuário</p>
+                    <p className="text-emerald-50 font-mono text-lg">{String(result?.username || "")}</p>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-slate-400 hover:text-emerald-400 hover:bg-emerald-400/10"
+                    onClick={() => {
+                      navigator.clipboard.writeText(String(result?.username || ""));
+                      toast({ title: "Copiado!", description: "Usuário copiado para a área de transferência" });
+                    }}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 flex items-center justify-between group">
+                  <div className="text-left">
+                    <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Senha</p>
+                    <p className="text-emerald-50 font-mono text-lg">{String(result?.password || "")}</p>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-slate-400 hover:text-emerald-400 hover:bg-emerald-400/10"
+                    onClick={() => {
+                      navigator.clipboard.writeText(String(result?.password || ""));
+                      toast({ title: "Copiado!", description: "Senha copiada para a área de transferência" });
+                    }}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <p className="text-sm text-slate-300">
+                  ⌛ Seu teste é válido por <span className="text-emerald-400 font-bold">4 horas</span>.
+                </p>
+                <p className="text-sm text-emerald-400 font-medium">Boa diversão! ✨</p>
               </div>
             </div>
 
             <Button
               onClick={resetDialog}
               variant="outline"
-              className="w-full border-slate-700 text-slate-300 hover:bg-slate-800"
+              className="w-full border-slate-800 bg-slate-800/50 text-slate-300 hover:bg-slate-800 hover:text-white"
             >
               Criar Outro Teste
             </Button>
