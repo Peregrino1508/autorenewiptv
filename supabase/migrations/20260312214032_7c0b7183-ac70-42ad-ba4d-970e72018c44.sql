@@ -1,0 +1,1 @@
+UPDATE iptv_panels SET url = 'https://mcapi.knewcms.com:2087' WHERE id = '0d44464f-e011-4f4e-92cc-2b8cd33cf263';
