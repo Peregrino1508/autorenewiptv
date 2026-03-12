@@ -28,7 +28,7 @@ serve(async (req) => {
     const { data: hasRole } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
     if (!hasRole) throw new Error('Acesso negado: somente administradores');
 
-    const { panel_id, notes } = await req.json();
+    const { panel_id, test_type, notes } = await req.json();
 
     if (!panel_id) {
       throw new Error('panel_id é obrigatório');
