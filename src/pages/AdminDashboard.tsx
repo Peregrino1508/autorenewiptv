@@ -9,6 +9,7 @@ import { IptvUsersManager } from "@/components/admin/IptvUsersManager";
 import { SpreadsheetManager } from "@/components/admin/SpreadsheetManager";
 import { CreateTrialDialog } from "@/components/admin/CreateTrialDialog";
 import { CreateTrialWWPanelDialog } from "@/components/admin/CreateTrialWWPanelDialog";
+import { DynamicTrialDialog } from "@/components/admin/DynamicTrialDialog";
 import { FinancialReports } from "@/components/admin/FinancialReports";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,6 +61,20 @@ const AdminDashboard = () => {
     },
   });
 
+  // Fetch panels for dynamic test buttons
+  const { data: activePanels } = useQuery({
+    queryKey: ["active-panels-buttons"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("iptv_panels")
+        .select("id, name, panel_type, test_button_name")
+        .eq("is_active", true)
+        .not("test_button_name", "is", null);
+      if (error) throw error;
+      return data;
+    },
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Animated background grid */}
@@ -91,8 +106,15 @@ const AdminDashboard = () => {
                   <SheetTitle className="text-white">Ações do Admin</SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col gap-4">
-                  <CreateTrialDialog />
-                  <CreateTrialWWPanelDialog />
+                  {activePanels?.map((panel) => (
+                    <DynamicTrialDialog key={panel.id} panel={panel as any} />
+                  ))}
+                  {!activePanels?.length && (
+                    <>
+                      <CreateTrialDialog />
+                      <CreateTrialWWPanelDialog />
+                    </>
+                  )}
                   <Button
                     onClick={() => navigate("/checkout")}
                     variant="outline"
@@ -122,8 +144,15 @@ const AdminDashboard = () => {
 
           {/* Desktop Buttons */}
           <div className="hidden md:flex gap-3">
-            <CreateTrialDialog />
-            <CreateTrialWWPanelDialog />
+            {activePanels?.map((panel) => (
+              <DynamicTrialDialog key={panel.id} panel={panel as any} />
+            ))}
+            {!activePanels?.length && (
+              <>
+                <CreateTrialDialog />
+                <CreateTrialWWPanelDialog />
+              </>
+            )}
             <Button
               onClick={() => navigate("/checkout")}
               variant="outline"

@@ -27,6 +27,7 @@ export function PanelsManager() {
     panel_type: "xui_one",
     is_active: true,
     notes: "",
+    test_button_name: "",
   });
 
   // Fetch panels
@@ -133,6 +134,7 @@ export function PanelsManager() {
       panel_type: "xui_one",
       is_active: true,
       notes: "",
+      test_button_name: "",
     });
     setEditingPanel(null);
   };
@@ -146,6 +148,7 @@ export function PanelsManager() {
       panel_type: panel.panel_type,
       is_active: panel.is_active,
       notes: panel.notes || "",
+      test_button_name: (panel as any).test_button_name || "",
     });
     setEditingPanel(panel);
     setIsDialogOpen(true);
@@ -253,6 +256,17 @@ export function PanelsManager() {
                   placeholder="Notas adicionais sobre o painel..."
                 />
               </div>
+
+              <div>
+                <Label htmlFor="test_button_name">Nome do Botão de Teste (Ex: Criar Teste WPlay)</Label>
+                <Input
+                  id="test_button_name"
+                  value={formData.test_button_name}
+                  onChange={(e) => setFormData({ ...formData, test_button_name: e.target.value })}
+                  className="bg-white/10 border-white/20 text-white"
+                  placeholder="Se preenchido, um botão aparecerá no dashboard"
+                />
+              </div>
               
               <Button 
                 type="submit" 
@@ -291,9 +305,9 @@ export function PanelsManager() {
                 <p className="text-slate-300">
                   <span className="font-medium">Tipo:</span> {panel.panel_type.toUpperCase()}
                 </p>
-                {panel.notes && (
+                {(panel as any).test_button_name && (
                   <p className="text-slate-300">
-                    <span className="font-medium">Notas:</span> {panel.notes}
+                    <span className="font-medium text-amber-400">Botão:</span> {(panel as any).test_button_name}
                   </p>
                 )}
               </div>
