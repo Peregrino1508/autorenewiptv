@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { iptv_username, customer_email, customer_name, plan_id, panel_id, registered_user_payment } = await req.json();
+    const { iptv_username, customer_email, customer_name, plan_id, panel_id, registered_user_payment, origin_url } = await req.json();
 
     if (!iptv_username) {
       throw new Error('Campo iptv_username é obrigatório');
@@ -163,9 +163,9 @@ serve(async (req) => {
         },
         external_reference: paymentRecord.id,
         back_urls: {
-          success: `${req.headers.get('origin') || 'http://localhost:5173'}/checkout?checkout_status=success&user=${iptv_username}`,
-          failure: `${req.headers.get('origin') || 'http://localhost:5173'}/checkout?checkout_status=failure&user=${iptv_username}`,
-          pending: `${req.headers.get('origin') || 'http://localhost:5173'}/checkout?checkout_status=pending&user=${iptv_username}`,
+          success: `${origin_url || req.headers.get('origin') || 'https://autorenewiptv.lovable.app'}/checkout?checkout_status=success&user=${iptv_username}`,
+          failure: `${origin_url || req.headers.get('origin') || 'https://autorenewiptv.lovable.app'}/checkout?checkout_status=failure&user=${iptv_username}`,
+          pending: `${origin_url || req.headers.get('origin') || 'https://autorenewiptv.lovable.app'}/checkout?checkout_status=pending&user=${iptv_username}`,
         },
         auto_return: "approved",
         notification_url: "https://snoiymaflwumwlbschau.supabase.co/functions/v1/mp-webhook",

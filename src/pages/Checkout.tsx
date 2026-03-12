@@ -124,6 +124,7 @@ export default function Checkout() {
           customer_email: formData.customer_email,
           customer_name: formData.customer_name,
           registered_user_payment: true,
+          origin_url: window.location.origin,
         },
       });
 
