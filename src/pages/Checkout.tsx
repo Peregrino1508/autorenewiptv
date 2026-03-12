@@ -114,6 +114,82 @@ export default function Checkout() {
     }
   }, [userParam]);
 
+  // Handle direct approved redirects from Mercado Pago
+  useEffect(() => {
+    if (checkoutStatus === "success" || mpStatus === "approved") {
+      setIsPaymentConfirmed(true);
+      setIsCheckingPayment(false);
+    }
+  }, [checkoutStatus, mpStatus]);
+
+  // For PIX/pending flows, poll payment status until approved
+  useEffect(() => {
+    const isFailureReturn = checkoutStatus === "failure" || mpStatus === "rejected" || mpStatus === "cancelled";
+    const isReturningFromGateway = Boolean(checkoutStatus || mpStatus || externalReference || mpPaymentId || userParam);
+
+    if (isPaymentConfirmed || isFailureReturn || !isReturningFromGateway) return;
+
+    let mounted = true;
+    let intervalId: number | undefined;
+    let timeoutId: number | undefined;
+
+    const checkPaymentStatus = async () => {
+      let queryResult: { status: string } | null = null;
+
+      if (externalReference) {
+        const { data } = await supabase
+          .from("payments")
+          .select("status")
+          .eq("id", externalReference)
+          .maybeSingle();
+        queryResult = data;
+      } else if (mpPaymentId) {
+        const { data } = await supabase
+          .from("payments")
+          .select("status")
+          .eq("mp_payment_id", mpPaymentId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        queryResult = data;
+      } else if (userParam) {
+        const { data } = await supabase
+          .from("payments")
+          .select("status")
+          .eq("iptv_username", userParam)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        queryResult = data;
+      }
+
+      if (!mounted || !queryResult) return;
+
+      if (queryResult.status === "approved") {
+        setIsPaymentConfirmed(true);
+        setIsCheckingPayment(false);
+        if (intervalId) window.clearInterval(intervalId);
+        if (timeoutId) window.clearTimeout(timeoutId);
+      }
+    };
+
+    setIsCheckingPayment(true);
+    checkPaymentStatus();
+
+    intervalId = window.setInterval(checkPaymentStatus, 3000);
+    timeoutId = window.setTimeout(() => {
+      if (!mounted) return;
+      setIsCheckingPayment(false);
+      if (intervalId) window.clearInterval(intervalId);
+    }, 120000);
+
+    return () => {
+      mounted = false;
+      if (intervalId) window.clearInterval(intervalId);
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [checkoutStatus, mpStatus, externalReference, mpPaymentId, userParam, isPaymentConfirmed]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
