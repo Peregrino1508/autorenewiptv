@@ -8,6 +8,7 @@ import { SettingsManager } from "@/components/admin/SettingsManager";
 import { IptvUsersManager } from "@/components/admin/IptvUsersManager";
 import { SpreadsheetManager } from "@/components/admin/SpreadsheetManager";
 import { CreateTrialDialog } from "@/components/admin/CreateTrialDialog";
+import { CreateTrialWWPanelDialog } from "@/components/admin/CreateTrialWWPanelDialog";
 import { FinancialReports } from "@/components/admin/FinancialReports";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
