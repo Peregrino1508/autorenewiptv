@@ -163,7 +163,7 @@ serve(async (req) => {
         },
         external_reference: paymentRecord.id,
         back_urls: {
-          success: `${req.headers.get('origin') || 'http://localhost:5173'}/checkout?checkout_status=success&user=${iptv_username}`,
+          success: `${req.headers.get('origin') || 'http://localhost:5173'}/success?user=${iptv_username}`,
           failure: `${req.headers.get('origin') || 'http://localhost:5173'}/checkout?checkout_status=failure&user=${iptv_username}`,
           pending: `${req.headers.get('origin') || 'http://localhost:5173'}/checkout?checkout_status=pending&user=${iptv_username}`,
         },

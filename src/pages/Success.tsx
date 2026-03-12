@@ -2,17 +2,38 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, Tv, ArrowRight, ExternalLink } from "lucide-react";
+import { ShieldCheck, Tv, ArrowRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function Success() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const userParam = searchParams.get("user");
   const [isVisible, setIsVisible] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
     setIsVisible(true);
-  }, []);
+    
+    if (userParam) {
+      const fetchUser = async () => {
+        const { data } = await supabase
+          .from("iptv_users")
+          .select("*")
+          .eq("username", userParam)
+          .eq("is_active", true)
+          .single();
+        
+        if (data) {
+          setUserData(data);
+        }
+      };
+      
+      fetchUser();
+    }
+  }, [userParam]);
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
@@ -55,8 +76,15 @@ export default function Success() {
         <CardContent className="text-center space-y-6 px-10">
           <div className="p-6 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-sm">
             <p className="text-slate-300 text-lg leading-relaxed">
-              Olá {userParam ? <span className="text-blue-400 font-bold">{userParam}</span> : 'cliente'}, sua assinatura foi processada e os créditos já estão disponíveis na sua conta! 🎈
+              Olá {userData?.customer_name || userParam ? <span className="text-blue-400 font-bold">{userData?.customer_name || userParam}</span> : 'cliente'}, sua assinatura foi processada e os créditos já estão disponíveis na sua conta! 🎈
             </p>
+            {userData?.expires_at && (
+              <div className="mt-4 pt-4 border-t border-white/5">
+                <p className="text-slate-400 text-sm">
+                  Próxima renovação: <span className="text-green-400 font-bold">{format(new Date(userData.expires_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-3">

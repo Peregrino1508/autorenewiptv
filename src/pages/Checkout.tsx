@@ -184,7 +184,7 @@ export default function Checkout() {
         {isAdmin && (
           <div className="mt-4 flex justify-center">
             <Button
-              onClick={() => navigate('/checkout?checkout_status=success&user=teste')}
+              onClick={() => navigate('/success?user=teste')}
               variant="outline"
               size="sm"
               className="bg-yellow-500/10 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 hover:text-yellow-300 gap-2 border-dashed"
@@ -275,73 +275,7 @@ export default function Checkout() {
           </CardFooter>
         </form>
       </Card>
-      {/* Success Modal Overlay */}
-      {checkoutStatus === 'success' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-          <Card className="w-full max-w-lg bg-slate-900/90 backdrop-blur-2xl border-white/10 shadow-[0_0_80px_-20px_rgba(34,197,94,0.4)] animate-in fade-in zoom-in duration-300">
-            <CardHeader className="text-center pt-8 pb-4">
-              <div className="relative mx-auto mb-6">
-                <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
-                <div className="relative w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.4)]">
-                  <ShieldCheck className="w-10 h-10 text-white" />
-                </div>
-                <span className="absolute top-0 -right-2 text-2xl animate-bounce">🎉</span>
-              </div>
 
-              <CardTitle className="text-3xl font-black tracking-tight text-white mb-2">
-                Pagamento Confirmado!
-              </CardTitle>
-              <div className="flex items-center justify-center gap-2 text-green-400 font-bold text-lg">
-                <Tv className="w-5 h-5" />
-                <span>Sistema Renovado com Sucesso! ✅</span>
-              </div>
-            </CardHeader>
-
-            <CardContent className="text-center space-y-6 px-8">
-              <div className="p-4 bg-white/5 rounded-xl border border-white/5 backdrop-blur-sm">
-                <p className="text-slate-300 text-base leading-relaxed">
-                  Olá {userParam ? <span className="text-blue-400 font-bold">{userParam}</span> : 'cliente'}, sua assinatura foi processada e os créditos já estão disponíveis na sua conta! 🎈
-                </p>
-                {registeredUser?.expires_at && (
-                  <div className="mt-2 pt-2 border-t border-white/5">
-                    <p className="text-slate-400 text-sm">
-                      Próxima renovação: <span className="text-green-400 font-bold">{format(new Date(registeredUser.expires_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-slate-400 text-sm">
-                  Agora você já pode aproveitar todos os canais, filmes e séries sem interrupções. 🍿📺
-                </p>
-                <div className="flex justify-center gap-3 py-1">
-                  <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-full border border-blue-500/20">Canais 4K</span>
-                  <span className="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-bold rounded-full border border-purple-500/20">Filmes</span>
-                  <span className="px-2 py-0.5 bg-pink-500/10 text-pink-400 text-[10px] font-bold rounded-full border border-pink-500/20">Séries</span>
-                </div>
-              </div>
-            </CardContent>
-
-            <CardFooter className="flex flex-col gap-3 pb-8 pt-6 px-8">
-              <Button 
-                className="w-full h-12 text-base font-bold bg-white text-slate-950 hover:bg-slate-200 transition-all group" 
-                onClick={handleReset}
-              >
-                Fazer outra renovação
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              <Button 
-                variant="ghost"
-                className="w-full h-10 text-slate-400 hover:text-white" 
-                onClick={handleReset}
-              >
-                Fechar
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
