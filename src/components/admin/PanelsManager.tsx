@@ -87,7 +87,14 @@ export function PanelsManager() {
         .eq("panel_id", id);
       if (paymentsError) throw paymentsError;
 
-      // 2. Delete plans referencing this panel
+      // 2. Remove panel_id from iptv_users referencing this panel
+      const { error: usersError } = await supabase
+        .from("iptv_users")
+        .update({ panel_id: null })
+        .eq("panel_id", id);
+      if (usersError) throw usersError;
+
+      // 3. Delete plans referencing this panel
       const { error: plansError } = await supabase
         .from("plans")
         .delete()
