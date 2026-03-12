@@ -146,6 +146,7 @@ export function IptvUsersManager() {
       customer_email: user.customer_email || "",
       is_active: user.is_active,
       plan_id: user.plan_id || "",
+      panel_id: user.panel_id || "",
     });
     setEditingUser(user);
     setIsDialogOpen(true);
