@@ -50,7 +50,8 @@ export function CreateTrialWWPanelDialog() {
       const response = await supabase.functions.invoke("create-trial-wwpanel", {
         body: {
           panel_id: selectedPanel,
-          notes: notes || "teste-auto",
+          test_type: testType,
+          notes: notes || "",
         },
       });
 
