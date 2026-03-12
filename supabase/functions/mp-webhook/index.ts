@@ -1,6 +1,196 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// ==== WWPANEL RENEWAL ====
+async function renewViaWWPanel(panel: any, username: string, durationDays: number, supabase: any, externalReference: string) {
+  const apiBase = panel.url.replace(/\/+$/, '');
+  const adminUser = panel.admin_user;
+  const adminPassword = panel.admin_password;
+  const months = Math.max(1, Math.round(durationDays / 30));
+
+  console.log(`[WWPanel] Iniciando renovação para usuário ${username} em ${apiBase}`);
+
+  // 1. Gerar token fixo via /auth/static-token
+  console.log(`[WWPanel] Gerando token via POST /auth/static-token...`);
+  const tokenResponse = await fetch(`${apiBase}/auth/static-token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: adminUser, password: adminPassword })
+  });
+  const tokenText = await tokenResponse.text();
+  console.log(`[WWPanel] Token response status: ${tokenResponse.status}, body: ${tokenText.substring(0, 300)}`);
+
+  let tokenData;
+  try { tokenData = JSON.parse(tokenText); } catch (e) {
+    throw new Error(`[WWPanel] Falha ao parsear resposta do token: ${tokenText.substring(0, 200)}`);
+  }
+
+  if (!tokenData.token) {
+    throw new Error(`[WWPanel] Token não retornado: ${tokenText.substring(0, 200)}`);
+  }
+
+  const authToken = tokenData.token;
+  const authHeaders = {
+    'Authorization': `Bearer ${authToken}`,
+    'Content-Type': 'application/json'
+  };
+
+  // 2. Tentar estender usando o username diretamente como ID
+  // Na API WWPanel, username e id costumam ser o mesmo valor numérico
+  const userId = username;
+  const extendUrl = `${apiBase}/lines/extend/${userId}`;
+  console.log(`[WWPanel] Chamando PATCH ${extendUrl} com credits=${months}...`);
+
+  const extendResponse = await fetch(extendUrl, {
+    method: 'PATCH',
+    headers: authHeaders,
+    body: JSON.stringify({ credits: months })
+  });
+  const extendText = await extendResponse.text();
+  console.log(`[WWPanel] Extend response status: ${extendResponse.status}, body: ${extendText.substring(0, 500)}`);
+
+  if (!extendResponse.ok) {
+    throw new Error(`[WWPanel] API extend falhou (status ${extendResponse.status}): ${extendText.substring(0, 300)}`);
+  }
+
+  let extendData;
+  try { extendData = JSON.parse(extendText); } catch (e) {}
+
+  const newExpDate = extendData?.exp_date || extendData?.expDate || 'N/A';
+
+  // Atualizar o registro do pagamento
+  await supabase
+    .from('payments')
+    .update({
+      renewal_status: 'success',
+      renewal_message: `[WWPanel] Usuário ${username} renovado por ${months} mês(es). Nova expiração: ${newExpDate}`,
+    })
+    .eq('id', externalReference);
+
+  // Atualizar a data de expiração no cadastro do usuário
+  if (newExpDate !== 'N/A') {
+    await supabase
+      .from('iptv_users')
+      .update({ expires_at: newExpDate })
+      .eq('username', username);
+  }
+
+  console.log(`[WWPanel] Renovação concluída com sucesso para ${username}! Nova expiração: ${newExpDate}`);
+}
+
+// ==== XUI ONE RENEWAL ====
+async function renewViaXuiOne(panel: any, username: string, durationDays: number, plan: any, supabase: any, externalReference: string) {
+  const adminUser = panel.admin_user;
+  const adminPassword = panel.admin_password;
+  const apiBase = panel.url.replace(/\/+$/, '');
+  const apiRoot = apiBase.replace(/\/(p2p|iptv|nexus|red-club)$/i, '');
+  const systemMatch = apiBase.match(/\/(p2p|iptv|nexus|red-club)$/i);
+  const primarySystem = systemMatch ? systemMatch[1].toLowerCase() : 'p2p';
+  const allSystems = ['p2p', 'iptv', 'nexus', 'red-club'];
+  const systemsToTry = [primarySystem, ...allSystems.filter(s => s !== primarySystem)];
+  const months = durationDays / 30;
+
+  console.log(`[XUI] Iniciando renovação para usuário ${username}. Sistema primário: ${primarySystem}`);
+
+  // 1. Login via POST /auth/login
+  const loginResponse = await fetch(`${apiRoot}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: adminUser, password: adminPassword })
+  });
+  const loginText = await loginResponse.text();
+  console.log(`[XUI] Login response status: ${loginResponse.status}, body: ${loginText.substring(0, 300)}`);
+
+  let loginData;
+  try { loginData = JSON.parse(loginText); } catch (e) {
+    throw new Error(`[XUI] Falha ao parsear resposta do login: ${loginText.substring(0, 200)}`);
+  }
+
+  if (!loginData.auth || !loginData.token) {
+    throw new Error(`[XUI] Login falhou: ${loginText.substring(0, 200)}`);
+  }
+
+  const authToken = loginData.token;
+  const authHeaders = {
+    'Authorization': `Bearer ${authToken}`,
+    'Content-Type': 'application/json'
+  };
+
+  // 2. Buscar usuário nos sistemas
+  let internalUserId: string | null = null;
+  let foundInSystem: string | null = null;
+
+  for (const systemPath of systemsToTry) {
+    const listUrl = `${apiRoot}/${systemPath}/list?limit=100&page=1&orderBy=id&order=desc&search=${encodeURIComponent(username)}`;
+    console.log(`[XUI] Buscando usuário ${username} no sistema ${systemPath}...`);
+    try {
+      const listResponse = await fetch(listUrl, { headers: authHeaders });
+      const listText = await listResponse.text();
+      console.log(`[XUI][${systemPath}] status: ${listResponse.status}, body: ${listText.substring(0, 300)}`);
+
+      const listData = JSON.parse(listText);
+      const users = listData.items || listData.data || listData.users || listData.rows || listData;
+      if (Array.isArray(users)) {
+        const found = users.find((u: any) =>
+          String(u.username) === String(username) ||
+          String(u.token) === String(username) ||
+          String(u.notes)?.includes(String(username))
+        );
+        if (found) {
+          internalUserId = String(found.id);
+          foundInSystem = systemPath;
+          console.log(`[XUI] Usuário encontrado no sistema ${systemPath}! ID interno: ${internalUserId}`);
+          break;
+        }
+      }
+    } catch (e) {
+      console.error(`[XUI] Erro ao buscar no sistema ${systemPath}:`, e);
+    }
+  }
+
+  if (!internalUserId || !foundInSystem) {
+    throw new Error(`[XUI] Usuário ${username} não encontrado em nenhum sistema (tentados: ${systemsToTry.join(', ')})`);
+  }
+
+  // 3. PUT /extend/{userId}
+  const extendQs = `token=${encodeURIComponent(authToken)}&password=${encodeURIComponent(adminPassword)}&username=${encodeURIComponent(adminUser)}`;
+  const extendUrl = `${apiRoot}/${foundInSystem}/extend/${internalUserId}?${extendQs}`;
+  console.log(`[XUI] Chamando PUT extend para usuário ID ${internalUserId} no sistema ${foundInSystem} com month=${months}...`);
+  const extendResponse = await fetch(extendUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ month: months })
+  });
+  const extendText = await extendResponse.text();
+  console.log(`[XUI] Extend response status: ${extendResponse.status}, body: ${extendText.substring(0, 300)}`);
+
+  let extendData;
+  try { extendData = JSON.parse(extendText); } catch (e) {}
+
+  if (extendData?.success === true) {
+    const newExpDate = extendData.result?.endTime || 'N/A';
+
+    await supabase
+      .from('payments')
+      .update({
+        renewal_status: 'success',
+        renewal_message: `[XUI] Usuário ${username} (ID: ${internalUserId}) renovado no sistema ${foundInSystem} por ${months} mês(es). Nova expiração: ${newExpDate}`,
+      })
+      .eq('id', externalReference);
+
+    if (newExpDate !== 'N/A') {
+      await supabase
+        .from('iptv_users')
+        .update({ expires_at: newExpDate })
+        .eq('username', username);
+    }
+
+    console.log(`[XUI] Renovação concluída com sucesso para ${username} no sistema ${foundInSystem}! Nova expiração: ${newExpDate}`);
+  } else {
+    throw new Error(`[XUI] API extend falhou no sistema ${foundInSystem}: ${extendText.substring(0, 200)}`);
+  }
+}
+
 serve(async (req) => {
   try {
     const url = new URL(req.url);
@@ -113,123 +303,15 @@ serve(async (req) => {
 
         if (panelError || !panel) throw new Error("Panel not found: " + panelId);
 
-        const adminUser = panel.admin_user;
-        const adminPassword = panel.admin_password;
-        const apiBase = panel.url.replace(/\/+$/, '');
-        // Remove the system path to get the root API URL
-        const apiRoot = apiBase.replace(/\/(p2p|iptv|nexus|red-club)$/i, '');
-        // Get the primary system path from the panel URL
-        const systemMatch = apiBase.match(/\/(p2p|iptv|nexus|red-club)$/i);
-        const primarySystem = systemMatch ? systemMatch[1].toLowerCase() : 'p2p';
-        // All systems to try (primary first, then the others)
-        const allSystems = ['p2p', 'iptv', 'nexus', 'red-club'];
-        const systemsToTry = [primarySystem, ...allSystems.filter(s => s !== primarySystem)];
-
-        console.log(`Iniciando renovação para usuário ${username}. Sistema primário: ${primarySystem}`);
-
-        // 1. Login via POST /auth/login para obter token
-        console.log(`Autenticando via POST /auth/login...`);
-        const loginResponse = await fetch(`${apiRoot}/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: adminUser, password: adminPassword })
-        });
-        const loginText = await loginResponse.text();
-        console.log(`Login response status: ${loginResponse.status}, body: ${loginText.substring(0, 300)}`);
-
-        let loginData;
-        try { loginData = JSON.parse(loginText); } catch (e) {
-          throw new Error(`Falha ao parsear resposta do login: ${loginText.substring(0, 200)}`);
-        }
-
-        if (!loginData.auth || !loginData.token) {
-          throw new Error(`Login falhou: ${loginText.substring(0, 200)}`);
-        }
-
-        const authToken = loginData.token;
-        console.log(`Token obtido: ${authToken.substring(0, 8)}...`);
-
-        const authHeaders = {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json'
-        };
-
-        // 2. Buscar usuário nos sistemas (primário primeiro, depois os demais)
-        let internalUserId: string | null = null;
-        let foundInSystem: string | null = null;
-
-        for (const systemPath of systemsToTry) {
-          const listUrl = `${apiRoot}/${systemPath}/list?limit=100&page=1&orderBy=id&order=desc&search=${encodeURIComponent(username)}`;
-          console.log(`Buscando usuário ${username} no sistema ${systemPath}...`);
-          try {
-            const listResponse = await fetch(listUrl, { headers: authHeaders });
-            const listText = await listResponse.text();
-            console.log(`[${systemPath}] status: ${listResponse.status}, body: ${listText.substring(0, 300)}`);
-
-            const listData = JSON.parse(listText);
-            const users = listData.items || listData.data || listData.users || listData.rows || listData;
-            if (Array.isArray(users)) {
-              const found = users.find((u: any) =>
-                String(u.username) === String(username) ||
-                String(u.token) === String(username) ||
-                String(u.notes)?.includes(String(username))
-              );
-              if (found) {
-                internalUserId = String(found.id);
-                foundInSystem = systemPath;
-                console.log(`Usuário encontrado no sistema ${systemPath}! ID interno: ${internalUserId}`);
-                break;
-              }
-            }
-          } catch (e) {
-            console.error(`Erro ao buscar no sistema ${systemPath}:`, e);
-          }
-        }
-
-        if (!internalUserId || !foundInSystem) {
-          throw new Error(`Usuário ${username} não encontrado em nenhum sistema (tentados: ${systemsToTry.join(', ')})`);
-        }
-
-        // 3. Chamar PUT /extend/{userId} no sistema onde o usuário foi encontrado
+        const panelType = panel.panel_type || 'xui_one';
         const durationDays = plan?.duration_days || 30;
-        const months = durationDays / 30;
-        const extendQs = `token=${encodeURIComponent(authToken)}&password=${encodeURIComponent(adminPassword)}&username=${encodeURIComponent(adminUser)}`;
-        const extendUrl = `${apiRoot}/${foundInSystem}/extend/${internalUserId}?${extendQs}`;
-        console.log(`Chamando PUT extend para usuário ID ${internalUserId} no sistema ${foundInSystem} com month=${months}...`);
-        const extendResponse = await fetch(extendUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ month: months })
-        });
-        const extendText = await extendResponse.text();
-        console.log(`Extend response status: ${extendResponse.status}, body: ${extendText.substring(0, 300)}`);
 
-        let extendData;
-        try { extendData = JSON.parse(extendText); } catch (e) {}
-
-        if (extendData?.success === true) {
-          const newExpDate = extendData.result?.endTime || 'N/A';
-          
-          // Atualizar o registro do pagamento
-          await supabase
-            .from('payments')
-            .update({
-              renewal_status: 'success',
-              renewal_message: `Usuário ${username} (ID: ${internalUserId}) renovado no sistema ${foundInSystem} por ${months} mês(es). Nova expiração: ${newExpDate}`,
-            })
-            .eq('id', externalReference);
-
-          // Atualizar a data de expiração no cadastro do usuário
-          if (newExpDate !== 'N/A') {
-            await supabase
-              .from('iptv_users')
-              .update({ expires_at: newExpDate })
-              .eq('username', username);
-          }
-          
-          console.log(`Renovação concluída com sucesso para ${username} no sistema ${foundInSystem}! Nova expiração: ${newExpDate}`);
+        if (panelType === 'wwpanel') {
+          // ==== WWPANEL API ====
+          await renewViaWWPanel(panel, username, durationDays, supabase, externalReference);
         } else {
-          throw new Error(`API extend falhou no sistema ${foundInSystem}: ${extendText.substring(0, 200)}`);
+          // ==== XUI ONE API (existing logic) ====
+          await renewViaXuiOne(panel, username, durationDays, plan, supabase, externalReference);
         }
 
       } catch (renewError) {
