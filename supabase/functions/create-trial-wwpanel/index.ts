@@ -81,9 +81,9 @@ serve(async (req) => {
     
     const createBody = {
       notes: trialNotes,
-      package_p2p: testTypeNorm === 'wplay' ? "64399dca5ea59e8a1de2b083" : "",
-      package_iptv: testTypeNorm === 'wplay' ? "30" : "",
-      krator_package: testTypeNorm === 'krator' ? "1" : "",
+      package_p2p: "64399dca5ea59e8a1de2b083",
+      package_iptv: "30",
+      krator_package: "1",
       testDuration: 4
     };
     
@@ -115,7 +115,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating WWPanel trial:', error);
     return new Response(JSON.stringify({
       success: false,
