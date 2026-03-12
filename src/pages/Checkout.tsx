@@ -281,7 +281,7 @@ export default function Checkout() {
         )}
       </div>
 
-      {checkoutStatus !== 'success' && (
+      {!isPaymentConfirmed && (
         <Card className="w-full max-w-xl bg-slate-900/80 backdrop-blur-xl border-slate-800 shadow-2xl">
           <form onSubmit={handleSubmit}>
             <CardContent className="p-6 space-y-6">
