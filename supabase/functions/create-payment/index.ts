@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { iptv_username, customer_email, customer_name, plan_id, panel_id, registered_user_payment } = await req.json();
+    const { iptv_username, customer_email, customer_name, plan_id, panel_id, registered_user_payment, origin_url } = await req.json();
 
     if (!iptv_username) {
       throw new Error('Campo iptv_username é obrigatório');
