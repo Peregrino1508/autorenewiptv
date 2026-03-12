@@ -18,7 +18,7 @@ export function CreateTrialWWPanelDialog() {
   const [selectedPanel, setSelectedPanel] = useState("");
   const [testType, setTestType] = useState("wplay");
   const [notes, setNotes] = useState("");
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<Record<string, unknown> | null>(null);
 
   const { data: panels } = useQuery({
     queryKey: ["iptv-panels-wwpanel"],
@@ -70,10 +70,11 @@ export function CreateTrialWWPanelDialog() {
       } else {
         throw new Error(data.error || "Erro desconhecido");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Erro ao criar teste";
       toast({
         title: "Erro ao criar teste WPlay",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     } finally {
