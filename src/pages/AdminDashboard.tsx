@@ -8,6 +8,7 @@ import { SettingsManager } from "@/components/admin/SettingsManager";
 import { IptvUsersManager } from "@/components/admin/IptvUsersManager";
 import { SpreadsheetManager } from "@/components/admin/SpreadsheetManager";
 import { CreateTrialDialog } from "@/components/admin/CreateTrialDialog";
+import { CreateTrialWWPanelDialog } from "@/components/admin/CreateTrialWWPanelDialog";
 import { FinancialReports } from "@/components/admin/FinancialReports";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -91,6 +92,7 @@ const AdminDashboard = () => {
                 </SheetHeader>
                 <div className="flex flex-col gap-4">
                   <CreateTrialDialog />
+                  <CreateTrialWWPanelDialog />
                   <Button
                     onClick={() => navigate("/checkout")}
                     variant="outline"
@@ -121,6 +123,7 @@ const AdminDashboard = () => {
           {/* Desktop Buttons */}
           <div className="hidden md:flex gap-3">
             <CreateTrialDialog />
+            <CreateTrialWWPanelDialog />
             <Button
               onClick={() => navigate("/checkout")}
               variant="outline"
