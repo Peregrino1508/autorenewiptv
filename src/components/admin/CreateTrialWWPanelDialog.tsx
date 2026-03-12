@@ -121,6 +121,19 @@ export function CreateTrialWWPanelDialog() {
             </div>
 
             <div>
+              <Label className="text-slate-300">Tipo de Teste *</Label>
+              <Select value={testType} onValueChange={setTestType}>
+                <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-700">
+                  <SelectItem value="wplay" className="text-white hover:bg-slate-700">WPlay (P2P/IPTV)</SelectItem>
+                  <SelectItem value="krator" className="text-white hover:bg-slate-700">Krator+</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label className="text-slate-300">Observação (opcional)</Label>
               <Input
                 value={notes}
