@@ -376,7 +376,7 @@ export default function Checkout() {
       )}
 
       {/* Success Modal Overlay */}
-      {checkoutStatus === 'success' && (
+      {isPaymentConfirmed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950 flex flex-col items-center">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 mb-2">
