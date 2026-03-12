@@ -75,18 +75,36 @@ serve(async (req) => {
     // 2. Create trial line via POST /lines/test
     const trialNotes = notes || '';
     const createUrl = `${apiBase}/lines/test`;
-    console.log(`[WWPanel Trial] Criando teste via POST ${createUrl}...`);
+    
+    // Build payload based on test type
+    let createBody: Record<string, unknown>;
+    const testTypeNorm = (test_type || 'wplay').toLowerCase();
+    
+    if (testTypeNorm === 'krator') {
+      createBody = {
+        notes: trialNotes,
+        package_p2p: "",
+        package_iptv: "",
+        krator_package: "1",
+        testDuration: 4
+      };
+      console.log(`[WWPanel Trial] Criando teste KRATOR+ via POST ${createUrl}...`);
+    } else {
+      // wplay = P2P + IPTV
+      createBody = {
+        notes: trialNotes,
+        package_p2p: "64399dca5ea59e8a1de2b083",
+        package_iptv: "30",
+        krator_package: "",
+        testDuration: 4
+      };
+      console.log(`[WWPanel Trial] Criando teste WPLAY via POST ${createUrl}...`);
+    }
 
     const createResponse = await fetch(createUrl, {
       method: 'POST',
       headers: authHeaders,
-      body: JSON.stringify({
-        notes: trialNotes,
-        package_p2p: "64399dca5ea59e8a1de2b083",
-        package_iptv: "30",
-        krator_package: "1",
-        testDuration: 4
-      })
+      body: JSON.stringify(createBody)
     });
     const createText = await createResponse.text();
     console.log(`[WWPanel Trial] Create response: ${createResponse.status} - ${createText.substring(0, 500)}`);
