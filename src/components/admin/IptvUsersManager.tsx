@@ -318,6 +318,11 @@ export function IptvUsersManager() {
                     {plans.find(p => p.id === user.plan_id)?.name || 'Plano vinculado'} — {plans.find(p => p.id === user.plan_id)?.duration_days || '?'} dias
                   </div>
                 )}
+                {user.panel_id && panels && (
+                  <div className="text-xs text-cyan-400 mt-1">
+                    📡 {panels.find(p => p.id === user.panel_id)?.name || 'Painel vinculado'}
+                  </div>
+                )}
               </div>
               
               {user.customer_name && (
