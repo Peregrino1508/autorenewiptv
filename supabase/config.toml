@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.test-panel]
 verify_jwt = false
+
+[functions.test-renewal]
+verify_jwt = false
