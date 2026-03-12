@@ -74,16 +74,32 @@ serve(async (req) => {
         planData = activePlan;
       }
 
-      // Get the first active panel for this user
-      const { data: firstActivePanel, error: panelError2 } = await supabase
-        .from('iptv_panels')
-        .select('*')
-        .eq('is_active', true)
-        .limit(1)
-        .single();
-      
-      if (panelError2) throw new Error('Nenhum painel ativo encontrado');
-      panelData = firstActivePanel;
+      // Resolve panel: user.panel_id > plan.panel_id > first active panel
+      let resolvedPanelId = registeredUser.panel_id;
+
+      if (!resolvedPanelId && planData?.panel_id) {
+        resolvedPanelId = planData.panel_id;
+      }
+
+      if (resolvedPanelId) {
+        const { data: panel, error: panelErr } = await supabase
+          .from('iptv_panels')
+          .select('*')
+          .eq('id', resolvedPanelId)
+          .single();
+        if (panelErr || !panel) throw new Error('Painel vinculado ao usuário não encontrado');
+        panelData = panel;
+      } else {
+        // Fallback: first active panel
+        const { data: fallbackPanel, error: panelErr2 } = await supabase
+          .from('iptv_panels')
+          .select('*')
+          .eq('is_active', true)
+          .limit(1)
+          .single();
+        if (panelErr2) throw new Error('Nenhum painel ativo encontrado');
+        panelData = fallbackPanel;
+      }
       
     } else {
       // Regular plan-based payment

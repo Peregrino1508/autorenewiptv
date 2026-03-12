@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Edit, Trash2, User, Copy, ExternalLink } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
-type IptvUser = Tables<"iptv_users"> & { plan_id?: string | null };
+type IptvUser = Tables<"iptv_users">;
 
 export function IptvUsersManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -26,6 +26,7 @@ export function IptvUsersManager() {
     customer_email: "",
     is_active: true,
     plan_id: "" as string,
+    panel_id: "" as string,
   });
 
   const { data: users, isLoading } = useQuery({
@@ -49,6 +50,19 @@ export function IptvUsersManager() {
         .select("*")
         .eq("is_active", true)
         .order("price", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: panels } = useQuery({
+    queryKey: ["iptv-panels"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("iptv_panels")
+        .select("*")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
       if (error) throw error;
       return data;
     },
@@ -119,6 +133,7 @@ export function IptvUsersManager() {
       customer_email: "",
       is_active: true,
       plan_id: "",
+      panel_id: "",
     });
     setEditingUser(null);
   };
@@ -131,6 +146,7 @@ export function IptvUsersManager() {
       customer_email: user.customer_email || "",
       is_active: user.is_active,
       plan_id: user.plan_id || "",
+      panel_id: user.panel_id || "",
     });
     setEditingUser(user);
     setIsDialogOpen(true);
@@ -138,10 +154,10 @@ export function IptvUsersManager() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const { plan_id, ...rest } = formData;
+    const { plan_id, panel_id, ...rest } = formData;
     const userData = editingUser 
-      ? { ...rest, plan_id: plan_id || null, id: editingUser.id }
-      : { ...rest, plan_id: plan_id || null };
+      ? { ...rest, plan_id: plan_id || null, panel_id: panel_id || null, id: editingUser.id }
+      : { ...rest, plan_id: plan_id || null, panel_id: panel_id || null };
     saveUser.mutate(userData as any);
   };
 
@@ -222,6 +238,25 @@ export function IptvUsersManager() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div>
+                <Label htmlFor="panel_id" className="text-slate-300">Painel IPTV *</Label>
+                <Select
+                  value={formData.panel_id}
+                  onValueChange={(value) => setFormData({ ...formData, panel_id: value })}
+                >
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                    <SelectValue placeholder="Selecione o painel" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    {panels?.map((panel) => (
+                      <SelectItem key={panel.id} value={panel.id} className="text-white">
+                        {panel.name} — {panel.url}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               
               <div>
                 <Label htmlFor="customer_name" className="text-slate-300">Nome do Cliente</Label>
@@ -281,6 +316,11 @@ export function IptvUsersManager() {
                 {user.plan_id && plans && (
                   <div className="text-xs text-blue-400 mt-1">
                     {plans.find(p => p.id === user.plan_id)?.name || 'Plano vinculado'} — {plans.find(p => p.id === user.plan_id)?.duration_days || '?'} dias
+                  </div>
+                )}
+                {user.panel_id && panels && (
+                  <div className="text-xs text-cyan-400 mt-1">
+                    📡 {panels.find(p => p.id === user.panel_id)?.name || 'Painel vinculado'}
                   </div>
                 )}
               </div>

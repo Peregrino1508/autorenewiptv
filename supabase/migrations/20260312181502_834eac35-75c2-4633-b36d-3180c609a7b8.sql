@@ -1,0 +1,1 @@
+ALTER TABLE public.iptv_users ADD COLUMN panel_id uuid REFERENCES public.iptv_panels(id) DEFAULT NULL;
