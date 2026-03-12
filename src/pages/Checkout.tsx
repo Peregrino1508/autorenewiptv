@@ -15,6 +15,9 @@ export default function Checkout() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const checkoutStatus = searchParams.get("checkout_status");
+  const mpStatus = searchParams.get("status") || searchParams.get("collection_status");
+  const externalReference = searchParams.get("external_reference");
+  const mpPaymentId = searchParams.get("payment_id") || searchParams.get("collection_id");
   const userParam = searchParams.get("user");
   
   const [formData, setFormData] = useState({
@@ -25,6 +28,10 @@ export default function Checkout() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [registeredUser, setRegisteredUser] = useState<any>(null);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(
+    checkoutStatus === "success" || mpStatus === "approved"
+  );
 
   // Check if current user is admin
   const { data: isAdmin } = useQuery({
