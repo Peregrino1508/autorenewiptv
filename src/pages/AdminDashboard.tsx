@@ -65,13 +65,20 @@ const AdminDashboard = () => {
   const { data: activePanels } = useQuery({
     queryKey: ["active-panels-buttons"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("iptv_panels")
-        .select("id, name, panel_type, test_button_name")
-        .eq("is_active", true)
-        .not("test_button_name", "is", null);
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from("iptv_panels")
+          .select("id, name, panel_type, test_button_name")
+          .eq("is_active", true);
+        
+        if (error) throw error;
+        
+        // Filter in memory to handle missing test_button_name gracefully
+        return data?.filter(p => (p as any).test_button_name) || [];
+      } catch (error: any) {
+        console.error("Erro ao carregar botões dinâmicos:", error);
+        return []; // Return empty list instead of crashing
+      }
     },
   });
 
