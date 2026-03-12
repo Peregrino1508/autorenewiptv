@@ -133,6 +133,7 @@ export function IptvUsersManager() {
       customer_email: "",
       is_active: true,
       plan_id: "",
+      panel_id: "",
     });
     setEditingUser(null);
   };
