@@ -135,6 +135,7 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean
+          panel_id: string | null
           plan_id: string | null
           updated_at: string
           username: string
@@ -148,6 +149,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          panel_id?: string | null
           plan_id?: string | null
           updated_at?: string
           username: string
@@ -161,11 +163,19 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          panel_id?: string | null
           plan_id?: string | null
           updated_at?: string
           username?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "iptv_users_panel_id_fkey"
+            columns: ["panel_id"]
+            isOneToOne: false
+            referencedRelation: "iptv_panels"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "iptv_users_plan_id_fkey"
             columns: ["plan_id"]
