@@ -76,19 +76,18 @@ serve(async (req) => {
     const trialNotes = notes || '';
     const createUrl = `${apiBase}/lines/test`;
     
-    // Build payload based on test type
+    // Build payload - always send all fields populated (API requires it)
     const testTypeNorm = (test_type || 'wplay').toLowerCase();
     
     const createBody = {
       notes: trialNotes,
-      package_p2p: testTypeNorm === 'krator' ? "" : "64399dca5ea59e8a1de2b083",
-      package_iptv: testTypeNorm === 'krator' ? "" : "30",
-      krator_package: testTypeNorm === 'krator' ? "1" : "",
+      package_p2p: "64399dca5ea59e8a1de2b083",
+      package_iptv: "30",
+      krator_package: "1",
       testDuration: 4
     };
     
     console.log(`[WWPanel Trial] Criando teste ${testTypeNorm.toUpperCase()} via POST ${createUrl}...`);
-    console.log(`[WWPanel Trial] Payload:`, JSON.stringify(createBody));
 
     const createResponse = await fetch(createUrl, {
       method: 'POST',
