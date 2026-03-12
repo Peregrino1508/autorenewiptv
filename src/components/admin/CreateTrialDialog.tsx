@@ -21,16 +21,18 @@ export function CreateTrialDialog() {
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
 
   const { data: panels } = useQuery({
-    queryKey: ["iptv-panels"],
+    queryKey: ["iptv-panels-orange"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("iptv_panels")
         .select("*")
         .eq("is_active", true)
-        .eq("name", "TVS-R6TV")
         .order("name");
+
       if (error) throw error;
-      return data;
+      
+      // Filter in memory for robustness and uniquely identifiable cache
+      return data?.filter(p => p.name === "TVS-R6TV") || [];
     },
   });
 
