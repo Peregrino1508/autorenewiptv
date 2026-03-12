@@ -158,7 +158,8 @@ export default function Checkout() {
       customer_name: "",
     });
     setRegisteredUser(null);
-    navigate('/checkout', { replace: true });
+    // Force a full page navigation to clear all state and query params
+    window.location.href = window.location.origin + '/checkout';
   };
 
   return (
