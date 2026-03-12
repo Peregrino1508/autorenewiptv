@@ -359,10 +359,16 @@ export default function Checkout() {
             <CardFooter className="p-6 pt-0">
               <Button
                 type="submit"
-                disabled={isLoading || !registeredUser}
+                disabled={isLoading || !registeredUser || isCheckingPayment}
                 className="w-full h-12 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
               >
-                {isLoading ? "Gerando pagamento..." : registeredUser ? `Pagar R$ ${Number(registeredUser.amount_due).toFixed(2)} e Renovar Agora` : 'Digite um usuário válido'}
+                {isCheckingPayment
+                  ? "Confirmando pagamento..."
+                  : isLoading
+                    ? "Gerando pagamento..."
+                    : registeredUser
+                      ? `Pagar R$ ${Number(registeredUser.amount_due).toFixed(2)} e Renovar Agora`
+                      : 'Digite um usuário válido'}
               </Button>
             </CardFooter>
           </form>
