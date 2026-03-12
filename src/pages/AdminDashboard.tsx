@@ -123,6 +123,7 @@ const AdminDashboard = () => {
           {/* Desktop Buttons */}
           <div className="hidden md:flex gap-3">
             <CreateTrialDialog />
+            <CreateTrialWWPanelDialog />
             <Button
               onClick={() => navigate("/checkout")}
               variant="outline"
