@@ -1,0 +1,1 @@
+UPDATE iptv_panels SET url = 'https://wwpanel.link' WHERE id = '0d44464f-e011-4f4e-92cc-2b8cd33cf263';
