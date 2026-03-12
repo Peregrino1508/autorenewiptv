@@ -11,7 +11,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
+    const startTime = Date.now();
+    const log = (msg: string) => console.log(`[WWPanel Trial][${Date.now() - startTime}ms] ${msg}`);
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -47,27 +49,45 @@ serve(async (req) => {
     const adminPassword = panel.admin_password;
     const apiBase = panel.url.replace(/\/+$/, '');
 
+    // Headers common to all requests to bypass simple bot detection
+    const commonHeaders = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      'Accept': 'application/json, text/plain, */*',
+      'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+      'Origin': apiBase,
+      'Referer': `${apiBase}/`
+    };
+
     // 1. Auth via static-token
-    console.log(`[WWPanel Trial] Autenticando em ${apiBase}...`);
+    log(`Autenticando em ${apiBase}...`);
     const tokenResponse = await fetch(`${apiBase}/auth/static-token`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...commonHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: adminUser, password: adminPassword })
     });
-    const tokenText = await tokenResponse.text();
-    console.log(`[WWPanel Trial] Token response: ${tokenResponse.status} - ${tokenText.substring(0, 300)}`);
 
-    let tokenData;
-    try { tokenData = JSON.parse(tokenText); } catch (e) {
-      throw new Error(`Falha ao autenticar: ${tokenText.substring(0, 200)}`);
+    const tokenText = await tokenResponse.text();
+    const isJsonToken = tokenResponse.headers.get('content-type')?.includes('application/json');
+
+    if (!tokenResponse.ok) {
+      if (tokenText.includes('<!DOCTYPE html>')) {
+        throw new Error('O servidor do painel bloqueou a conexão (Cloudflare/Firewall). Tente novamente em instantes.');
+      }
+      throw new Error(`Erro na autenticação (${tokenResponse.status}): ${tokenText.substring(0, 100)}`);
     }
 
-    if (!tokenData.token) {
-      throw new Error(`Token não retornado: ${tokenText.substring(0, 200)}`);
+    let tokenData;
+    try { 
+      tokenData = isJsonToken ? JSON.parse(tokenText) : { token: tokenText.trim() }; 
+    } catch (e) {
+      throw new Error(`Falha ao processar token: ${tokenText.substring(0, 100)}`);
     }
 
     const authToken = tokenData.token;
+    if (!authToken) throw new Error('Token não retornado pelo painel');
+
     const authHeaders = {
+      ...commonHeaders,
       'Authorization': `Bearer ${authToken}`,
       'Content-Type': 'application/json'
     };
@@ -87,24 +107,32 @@ serve(async (req) => {
       testDuration: 4
     };
     
-    console.log(`[WWPanel Trial] Criando teste ${testTypeNorm.toUpperCase()} via POST ${createUrl}...`);
+    log(`Criando teste ${testTypeNorm.toUpperCase()}...`);
 
     const createResponse = await fetch(createUrl, {
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify(createBody)
     });
-    const createText = await createResponse.text();
-    console.log(`[WWPanel Trial] Create response: ${createResponse.status} - ${createText.substring(0, 500)}`);
 
-    let createData;
-    try { createData = JSON.parse(createText); } catch (e) {
-      throw new Error(`Resposta inesperada: ${createText.substring(0, 300)}`);
-    }
+    const createText = await createResponse.text();
+    const isJsonCreate = createResponse.headers.get('content-type')?.includes('application/json');
 
     if (!createResponse.ok) {
-      throw new Error(`Erro ao criar teste (${createResponse.status}): ${createText.substring(0, 300)}`);
+      if (createText.includes('<!DOCTYPE html>')) {
+        throw new Error('Bloqueio de firewall ao criar teste. O painel pode estar sobrecarregado.');
+      }
+      throw new Error(`Erro ao criar teste (${createResponse.status}): ${createText.substring(0, 100)}`);
     }
+
+    let createData;
+    try { 
+      createData = isJsonCreate ? JSON.parse(createText) : { success: true, data: createText }; 
+    } catch (e) {
+      createData = { success: true, message: createText };
+    }
+
+    log(`Teste criado com sucesso.`);
 
     return new Response(JSON.stringify({
       success: true,
