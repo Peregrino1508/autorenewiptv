@@ -47,17 +47,52 @@ export function PanelsManager() {
   // Create/Update panel mutation
   const savePanel = useMutation({
     mutationFn: async (panel: typeof formData & { id?: string }) => {
-      if (panel.id) {
-        const { error } = await supabase
-          .from("iptv_panels")
-          .update(panel as any)
-          .eq("id", panel.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("iptv_panels")
-          .insert([panel as any]);
-        if (error) throw error;
+      const { test_button_name, notes, ...otherData } = panel;
+      
+      // Preparar notas com o marcador do botão para backup
+      const updatedNotes = test_button_name 
+        ? `${notes.split('||BTN:')[0]}||BTN:${test_button_name}`
+        : notes.split('||BTN:')[0];
+
+      try {
+        // Tentar salvar na coluna correta primeiro
+        if (panel.id) {
+          const { error } = await supabase
+            .from("iptv_panels")
+            .update(panel as any)
+            .eq("id", panel.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from("iptv_panels")
+            .insert([panel as any]);
+          if (error) throw error;
+        }
+      } catch (error: any) {
+        // Se a coluna não existir (Erro do cache de esquema), salvar no campo notes como backup
+        if (error.message?.includes("test_button_name") || error.code === "PGRST204" || error.message?.includes("column")) {
+          console.warn("Coluna test_button_name ausente. Usando campo 'notes' como backup...");
+          
+          const fallbackData = {
+            ...otherData,
+            notes: updatedNotes
+          };
+
+          if (panel.id) {
+            const { error: retryError } = await supabase
+              .from("iptv_panels")
+              .update(fallbackData as any)
+              .eq("id", panel.id);
+            if (retryError) throw retryError;
+          } else {
+            const { error: retryError } = await supabase
+              .from("iptv_panels")
+              .insert([fallbackData as any]);
+            if (retryError) throw retryError;
+          }
+        } else {
+          throw error;
+        }
       }
     },
     onSuccess: () => {
@@ -140,6 +175,13 @@ export function PanelsManager() {
   };
 
   const openEditDialog = (panel: Panel) => {
+    let btnName = (panel as any).test_button_name || "";
+    
+    // Backup: Se estiver vazio, tenta pegar das notas
+    if (!btnName && panel.notes && panel.notes.includes("||BTN:")) {
+      btnName = panel.notes.split("||BTN:")[1];
+    }
+
     setFormData({
       name: panel.name,
       url: panel.url,
@@ -147,8 +189,8 @@ export function PanelsManager() {
       admin_password: panel.admin_password,
       panel_type: panel.panel_type,
       is_active: panel.is_active,
-      notes: panel.notes || "",
-      test_button_name: (panel as any).test_button_name || "",
+      notes: panel.notes?.split("||BTN:")[0] || "",
+      test_button_name: btnName,
     });
     setEditingPanel(panel);
     setIsDialogOpen(true);

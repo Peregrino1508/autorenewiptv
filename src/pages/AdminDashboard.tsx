@@ -68,16 +68,26 @@ const AdminDashboard = () => {
       try {
         const { data, error } = await supabase
           .from("iptv_panels")
-          .select("id, name, panel_type, test_button_name")
+          .select("id, name, panel_type, notes, test_button_name")
           .eq("is_active", true);
         
         if (error) throw error;
         
-        // Filter in memory to handle missing test_button_name gracefully
-        return data?.filter(p => (p as any).test_button_name) || [];
+        // Mapear painéis extraindo o nome do botão da coluna ou das notas (backup)
+        return (data || []).map(p => {
+          let btnName = (p as any).test_button_name;
+          
+          // Se não tem na coluna, tenta extrair das notas
+          if (!btnName && p.notes && p.notes.includes("||BTN:")) {
+            btnName = p.notes.split("||BTN:")[1];
+          }
+          
+          return { ...p, test_button_name: btnName };
+        }).filter(p => p.test_button_name);
+
       } catch (error: any) {
         console.error("Erro ao carregar botões dinâmicos:", error);
-        return []; // Return empty list instead of crashing
+        return [];
       }
     },
   });
