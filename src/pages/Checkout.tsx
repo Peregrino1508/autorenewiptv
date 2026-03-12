@@ -184,7 +184,7 @@ export default function Checkout() {
         {isAdmin && (
           <div className="mt-4 flex justify-center">
             <Button
-              onClick={() => navigate('/success?user=teste')}
+              onClick={() => navigate('/checkout?checkout_status=success&user=teste')}
               variant="outline"
               size="sm"
               className="bg-yellow-500/10 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 hover:text-yellow-300 gap-2 border-dashed"
@@ -196,85 +196,162 @@ export default function Checkout() {
         )}
       </div>
 
-      <Card className="w-full max-w-xl bg-slate-900/80 backdrop-blur-xl border-slate-800 shadow-2xl">
-        <form onSubmit={handleSubmit}>
-          <CardContent className="p-6 space-y-6">
-            {/* Show registered user info if available */}
-            {registeredUser && (
-              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
-                <h3 className="text-green-400 font-semibold mb-2">✓ Usuário Encontrado</h3>
-                <p className="text-slate-300 text-sm">
-                  Valor a pagar: <span className="text-green-400 font-bold">R$ {Number(registeredUser.amount_due).toFixed(2)}</span>
-                </p>
-                {registeredUser.plans && (
+      {checkoutStatus !== 'success' && (
+        <Card className="w-full max-w-xl bg-slate-900/80 backdrop-blur-xl border-slate-800 shadow-2xl">
+          <form onSubmit={handleSubmit}>
+            <CardContent className="p-6 space-y-6">
+              {/* Show registered user info if available */}
+              {registeredUser && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
+                  <h3 className="text-green-400 font-semibold mb-2">✓ Usuário Encontrado</h3>
                   <p className="text-slate-300 text-sm">
-                    Plano: <span className="text-blue-400 font-semibold">{registeredUser.plans.name} ({registeredUser.plans.duration_days} dias)</span>
+                    Valor a pagar: <span className="text-green-400 font-bold">R$ {Number(registeredUser.amount_due).toFixed(2)}</span>
                   </p>
+                  {registeredUser.plans && (
+                    <p className="text-slate-300 text-sm">
+                      Plano: <span className="text-blue-400 font-semibold">{registeredUser.plans.name} ({registeredUser.plans.duration_days} dias)</span>
+                    </p>
+                  )}
+                  {registeredUser.customer_name && (
+                    <p className="text-slate-400 text-sm">Cliente: {registeredUser.customer_name}</p>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="iptv_username" className="text-slate-300">Seu Usuário IPTV e P2P para renovação *</Label>
+                  <div className="relative mt-1">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                    <Input
+                      id="iptv_username"
+                      required
+                      value={formData.iptv_username}
+                      onChange={e => setFormData({ ...formData, iptv_username: e.target.value })}
+                      className="pl-10 bg-slate-800/50 border-slate-700 text-white"
+                      placeholder="Digite seu login do IPTV"
+                      disabled={!!registeredUser} // Disable if it's a registered user
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="customer_name" className="text-slate-300">Seu Nome</Label>
+                  <div className="relative mt-1">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                    <Input
+                      id="customer_name"
+                      value={formData.customer_name}
+                      onChange={e => setFormData({ ...formData, customer_name: e.target.value })}
+                      className="pl-10 bg-slate-800/50 border-slate-700 text-white"
+                      placeholder="Como gostaria de ser chamado?"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="customer_email" className="text-slate-300">Seu E-mail {registeredUser ? '' : '(Opcional)'}</Label>
+                  <div className="relative mt-1">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                    <Input
+                      id="customer_email"
+                      type="email"
+                      value={formData.customer_email}
+                      onChange={e => setFormData({ ...formData, customer_email: e.target.value })}
+                      className="pl-10 bg-slate-800/50 border-slate-700 text-white"
+                      placeholder="Para receber o comprovante"
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="p-6 pt-0">
+              <Button
+                type="submit"
+                disabled={isLoading || !registeredUser}
+                className="w-full h-12 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+              >
+                {isLoading ? "Gerando pagamento..." : registeredUser ? `Pagar R$ ${Number(registeredUser.amount_due).toFixed(2)} e Renovar Agora` : 'Digite um usuário válido'}
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
+      )}
+
+      {/* Success Modal Overlay */}
+      {checkoutStatus === 'success' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950 flex flex-col items-center">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 mb-2">
+              Renove seu IPTV
+            </h1>
+            <p className="text-slate-400">Rápido, seguro e ativação imediata</p>
+          </div>
+          
+          <Card className="w-full max-w-lg bg-slate-900/90 backdrop-blur-2xl border-white/10 shadow-[0_0_80px_-20px_rgba(34,197,94,0.4)] animate-in fade-in zoom-in duration-300">
+            <CardHeader className="text-center pt-8 pb-4">
+              <div className="relative mx-auto mb-6">
+                <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
+                <div className="relative w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.4)]">
+                  <ShieldCheck className="w-10 h-10 text-white" />
+                </div>
+                <span className="absolute top-0 -right-2 text-2xl animate-bounce">🎉</span>
+              </div>
+
+              <CardTitle className="text-3xl font-black tracking-tight text-white mb-2">
+                Pagamento Confirmado!
+              </CardTitle>
+              <div className="flex items-center justify-center gap-2 text-green-400 font-bold text-lg">
+                <Tv className="w-5 h-5" />
+                <span>Sistema Renovado com Sucesso! ✅</span>
+              </div>
+            </CardHeader>
+
+            <CardContent className="text-center space-y-6 px-8">
+              <div className="p-4 bg-white/5 rounded-xl border border-white/5 backdrop-blur-sm">
+                <p className="text-slate-300 text-base leading-relaxed">
+                  Olá {registeredUser?.customer_name || userParam ? <span className="text-blue-400 font-bold">{registeredUser?.customer_name || userParam}</span> : 'cliente'}, sua assinatura foi processada e os créditos já estão disponíveis na sua conta! 🎈
+                </p>
+                {registeredUser?.expires_at && (
+                  <div className="mt-2 pt-2 border-t border-white/5">
+                    <p className="text-slate-400 text-sm">
+                      Próxima renovação: <span className="text-green-400 font-bold">{format(new Date(registeredUser.expires_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+                    </p>
+                  </div>
                 )}
-                {registeredUser.customer_name && (
-                  <p className="text-slate-400 text-sm">Cliente: {registeredUser.customer_name}</p>
-                )}
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="iptv_username" className="text-slate-300">Seu Usuário IPTV e P2P para renovação *</Label>
-                <div className="relative mt-1">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
-                  <Input
-                    id="iptv_username"
-                    required
-                    value={formData.iptv_username}
-                    onChange={e => setFormData({ ...formData, iptv_username: e.target.value })}
-                    className="pl-10 bg-slate-800/50 border-slate-700 text-white"
-                    placeholder="Digite seu login do IPTV"
-                    disabled={!!registeredUser} // Disable if it's a registered user
-                  />
-                </div>
               </div>
 
-              <div>
-                <Label htmlFor="customer_name" className="text-slate-300">Seu Nome</Label>
-                <div className="relative mt-1">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
-                  <Input
-                    id="customer_name"
-                    value={formData.customer_name}
-                    onChange={e => setFormData({ ...formData, customer_name: e.target.value })}
-                    className="pl-10 bg-slate-800/50 border-slate-700 text-white"
-                    placeholder="Como gostaria de ser chamado?"
-                  />
+              <div className="space-y-3">
+                <p className="text-slate-400 text-sm">
+                  Agora você já pode aproveitar todos os canais, filmes e séries sem interrupções. 🍿📺
+                </p>
+                <div className="flex justify-center gap-3 py-1">
+                  <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-full border border-blue-500/20">Canais 4K</span>
+                  <span className="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-bold rounded-full border border-purple-500/20">Filmes</span>
+                  <span className="px-2 py-0.5 bg-pink-500/10 text-pink-400 text-[10px] font-bold rounded-full border border-pink-500/20">Séries</span>
                 </div>
               </div>
+            </CardContent>
 
-              <div>
-                <Label htmlFor="customer_email" className="text-slate-300">Seu E-mail {registeredUser ? '' : '(Opcional)'}</Label>
-                <div className="relative mt-1">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
-                  <Input
-                    id="customer_email"
-                    type="email"
-                    value={formData.customer_email}
-                    onChange={e => setFormData({ ...formData, customer_email: e.target.value })}
-                    className="pl-10 bg-slate-800/50 border-slate-700 text-white"
-                    placeholder="Para receber o comprovante"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="p-6 pt-0">
-            <Button
-              type="submit"
-              disabled={isLoading || !registeredUser}
-              className="w-full h-12 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-            >
-              {isLoading ? "Gerando pagamento..." : registeredUser ? `Pagar R$ ${Number(registeredUser.amount_due).toFixed(2)} e Renovar Agora` : 'Digite um usuário válido'}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+            <CardFooter className="flex flex-col gap-3 pb-8 pt-6 px-8">
+              <Button 
+                className="w-full h-12 text-base font-bold bg-white text-slate-950 hover:bg-slate-200 transition-all group" 
+                onClick={handleReset}
+              >
+                Fazer outra renovação
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <Button 
+                variant="ghost"
+                className="w-full h-10 text-slate-400 hover:text-white" 
+                onClick={handleReset}
+              >
+                Fechar
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      )}
 
     </div>
   );
