@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { FlaskConical, Loader2 } from "lucide-react";
+import { FlaskConical, Loader2, Copy, CheckCircle2, MonitorPlay } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Panel = Tables<"iptv_panels">;
@@ -18,7 +18,7 @@ export function CreateTrialDialog() {
   const [selectedPanel, setSelectedPanel] = useState("");
   const [systemType, setSystemType] = useState("p2p");
   const [notes, setNotes] = useState("");
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<Record<string, unknown> | null>(null);
 
   const { data: panels } = useQuery({
     queryKey: ["iptv-panels"],
@@ -27,6 +27,7 @@ export function CreateTrialDialog() {
         .from("iptv_panels")
         .select("*")
         .eq("is_active", true)
+        .eq("name", "TVS-R6TV")
         .order("name");
       if (error) throw error;
       return data;
@@ -69,10 +70,11 @@ export function CreateTrialDialog() {
       } else {
         throw new Error(data.error || "Erro desconhecido");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
       toast({
         title: "Erro ao criar teste",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -164,50 +166,93 @@ export function CreateTrialDialog() {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="bg-green-900/30 border border-green-600/30 rounded-lg p-4">
-              <h3 className="text-green-400 font-bold mb-3">✅ Teste criado com sucesso!</h3>
-              <div className="space-y-2 text-sm">
+          <div className="space-y-6 py-2">
+            <div className="relative overflow-hidden bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6 text-center space-y-4">
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <MonitorPlay className="w-16 h-16" />
+              </div>
+              
+              <div className="space-y-1">
+                <h3 className="text-amber-400 font-bold text-lg flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-5 h-5" />
+                  Teste {systemType.toUpperCase()} Criado
+                </h3>
+                <p className="text-slate-400 text-sm font-medium">🚀 Bem vindo a R6TV</p>
+              </div>
+
+              <div className="grid gap-3 pt-2">
                 {result.username && (
-                  <p className="text-slate-300">
-                    <span className="font-medium text-white">Usuário:</span> {result.username}
-                  </p>
+                  <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 flex items-center justify-between group">
+                    <div className="text-left">
+                      <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Usuário</p>
+                      <p className="text-amber-50 font-mono text-lg">{String(result.username)}</p>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-slate-400 hover:text-amber-400 hover:bg-amber-400/10"
+                      onClick={() => {
+                        navigator.clipboard.writeText(String(result.username));
+                        toast({ title: "Copiado!", description: "Usuário copiado para a área de transferência" });
+                      }}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
                 )}
+
                 {result.password && (
-                  <p className="text-slate-300">
-                    <span className="font-medium text-white">Senha:</span> {result.password}
-                  </p>
+                  <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 flex items-center justify-between group">
+                    <div className="text-left">
+                      <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Senha</p>
+                      <p className="text-amber-50 font-mono text-lg">{String(result.password)}</p>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-slate-400 hover:text-amber-400 hover:bg-amber-400/10"
+                      onClick={() => {
+                        navigator.clipboard.writeText(String(result.password));
+                        toast({ title: "Copiado!", description: "Senha copiada para a área de transferência" });
+                      }}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
                 )}
-                {result.token && (
-                  <p className="text-slate-300">
-                    <span className="font-medium text-white">Token:</span>{" "}
-                    <span className="break-all font-mono text-xs">{result.token}</span>
-                  </p>
+
+                {(result.token || result.url) && (
+                  <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 space-y-2">
+                    {result.token && (
+                      <div className="text-left">
+                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Token</p>
+                        <p className="text-amber-50 font-mono text-[11px] break-all leading-relaxed">{String(result.token)}</p>
+                      </div>
+                    )}
+                    {result.url && (
+                      <div className="text-left border-t border-slate-700/30 pt-2">
+                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">URL</p>
+                        <p className="text-amber-50 font-mono text-[11px] break-all leading-relaxed">{String(result.url)}</p>
+                      </div>
+                    )}
+                  </div>
                 )}
-                {result.url && (
-                  <p className="text-slate-300">
-                    <span className="font-medium text-white">URL:</span>{" "}
-                    <span className="break-all text-xs">{result.url}</span>
-                  </p>
-                )}
+              </div>
+
+              <div className="pt-2">
                 {result.endTime && (
-                  <p className="text-slate-300">
-                    <span className="font-medium text-white">Expira em:</span> {result.endTime}
+                  <p className="text-sm text-slate-300">
+                    ⌛ Expira em: <span className="text-amber-400 font-bold">{String(result.endTime)}</span>
                   </p>
                 )}
-                {/* Show all fields as fallback */}
-                {!result.username && !result.token && (
-                  <pre className="text-xs text-slate-400 bg-slate-800 p-2 rounded overflow-auto max-h-48">
-                    {JSON.stringify(result, null, 2)}
-                  </pre>
-                )}
+                <p className="text-sm text-amber-400 font-medium">Boa diversão! ✨</p>
               </div>
             </div>
 
             <Button
               onClick={resetDialog}
               variant="outline"
-              className="w-full border-slate-700 text-slate-300 hover:bg-slate-800"
+              className="w-full border-slate-800 bg-slate-800/50 text-slate-300 hover:bg-slate-800 hover:text-white"
             >
               Criar Outro Teste
             </Button>
