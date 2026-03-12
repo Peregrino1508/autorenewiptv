@@ -183,62 +183,86 @@ export function CreateTrialDialog() {
               </div>
 
               <div className="grid gap-3 pt-2">
-                {result.username && (
-                  <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 flex items-center justify-between group">
-                    <div className="text-left">
-                      <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Usuário</p>
-                      <p className="text-amber-50 font-mono text-lg">{String(result.username)}</p>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="text-slate-400 hover:text-amber-400 hover:bg-amber-400/10"
-                      onClick={() => {
-                        navigator.clipboard.writeText(String(result.username));
-                        toast({ title: "Copiado!", description: "Usuário copiado para a área de transferência" });
-                      }}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
+                {/* Flexible data detection */}
+                {(() => {
+                  const username = result.username || result.user || result.login || result.client_username;
+                  const password = result.password || result.pass || result.client_password;
+                  const token = result.token || result.hash;
+                  const url = result.url || result.dns || result.server;
+                  const hasCredentials = username || password || token || url;
 
-                {result.password && (
-                  <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 flex items-center justify-between group">
-                    <div className="text-left">
-                      <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Senha</p>
-                      <p className="text-amber-50 font-mono text-lg">{String(result.password)}</p>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="text-slate-400 hover:text-amber-400 hover:bg-amber-400/10"
-                      onClick={() => {
-                        navigator.clipboard.writeText(String(result.password));
-                        toast({ title: "Copiado!", description: "Senha copiada para a área de transferência" });
-                      }}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
+                  if (!hasCredentials) {
+                    return (
+                      <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 text-left">
+                        <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Dados do Teste</p>
+                        <pre className="text-[10px] text-amber-50 font-mono break-all whitespace-pre-wrap leading-relaxed">
+                          {JSON.stringify(result, null, 2)}
+                        </pre>
+                      </div>
+                    );
+                  }
 
-                {(result.token || result.url) && (
-                  <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 space-y-2">
-                    {result.token && (
-                      <div className="text-left">
-                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Token</p>
-                        <p className="text-amber-50 font-mono text-[11px] break-all leading-relaxed">{String(result.token)}</p>
-                      </div>
-                    )}
-                    {result.url && (
-                      <div className="text-left border-t border-slate-700/30 pt-2">
-                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">URL</p>
-                        <p className="text-amber-50 font-mono text-[11px] break-all leading-relaxed">{String(result.url)}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  return (
+                    <>
+                      {username && (
+                        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 flex items-center justify-between group">
+                          <div className="text-left">
+                            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Usuário</p>
+                            <p className="text-amber-50 font-mono text-lg">{String(username)}</p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-slate-400 hover:text-amber-400 hover:bg-amber-400/10"
+                            onClick={() => {
+                              navigator.clipboard.writeText(String(username));
+                              toast({ title: "Copiado!", description: "Usuário copiado para a área de transferência" });
+                            }}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+
+                      {password && (
+                        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 flex items-center justify-between group">
+                          <div className="text-left">
+                            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Senha</p>
+                            <p className="text-amber-50 font-mono text-lg">{String(password)}</p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-slate-400 hover:text-amber-400 hover:bg-amber-400/10"
+                            onClick={() => {
+                              navigator.clipboard.writeText(String(password));
+                              toast({ title: "Copiado!", description: "Senha copiada para a área de transferência" });
+                            }}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+
+                      {(token || url) && (
+                        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 space-y-2">
+                          {token && (
+                            <div className="text-left">
+                              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Token</p>
+                              <p className="text-amber-50 font-mono text-[11px] break-all leading-relaxed">{String(token)}</p>
+                            </div>
+                          )}
+                          {url && (
+                            <div className="text-left border-t border-slate-700/30 pt-2">
+                              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">URL</p>
+                              <p className="text-amber-50 font-mono text-[11px] break-all leading-relaxed">{String(url)}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               <div className="pt-2">

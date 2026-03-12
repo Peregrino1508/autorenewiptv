@@ -182,41 +182,66 @@ export function CreateTrialWWPanelDialog() {
               </div>
 
               <div className="grid gap-3 pt-2">
-                <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 flex items-center justify-between group">
-                  <div className="text-left">
-                    <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Usuário</p>
-                    <p className="text-emerald-50 font-mono text-lg">{String(result?.username || "")}</p>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-slate-400 hover:text-emerald-400 hover:bg-emerald-400/10"
-                    onClick={() => {
-                      navigator.clipboard.writeText(String(result?.username || ""));
-                      toast({ title: "Copiado!", description: "Usuário copiado para a área de transferência" });
-                    }}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
+                {(() => {
+                  const username = result?.username || result?.user || result?.login;
+                  const password = result?.password || result?.pass;
+                  const hasCredentials = username || password;
 
-                <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 flex items-center justify-between group">
-                  <div className="text-left">
-                    <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Senha</p>
-                    <p className="text-emerald-50 font-mono text-lg">{String(result?.password || "")}</p>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-slate-400 hover:text-emerald-400 hover:bg-emerald-400/10"
-                    onClick={() => {
-                      navigator.clipboard.writeText(String(result?.password || ""));
-                      toast({ title: "Copiado!", description: "Senha copiada para a área de transferência" });
-                    }}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
+                  if (!hasCredentials) {
+                    return (
+                      <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 text-left">
+                        <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Dados do Teste</p>
+                        <pre className="text-[10px] text-emerald-50 font-mono break-all whitespace-pre-wrap leading-relaxed">
+                          {JSON.stringify(result, null, 2)}
+                        </pre>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <>
+                      {username && (
+                        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 flex items-center justify-between group">
+                          <div className="text-left">
+                            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Usuário</p>
+                            <p className="text-emerald-50 font-mono text-lg">{String(username)}</p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-slate-400 hover:text-emerald-400 hover:bg-emerald-400/10"
+                            onClick={() => {
+                              navigator.clipboard.writeText(String(username));
+                              toast({ title: "Copiado!", description: "Usuário copiado para a área de transferência" });
+                            }}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+
+                      {password && (
+                        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 flex items-center justify-between group">
+                          <div className="text-left">
+                            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Senha</p>
+                            <p className="text-emerald-50 font-mono text-lg">{String(password)}</p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-slate-400 hover:text-emerald-400 hover:bg-emerald-400/10"
+                            onClick={() => {
+                              navigator.clipboard.writeText(String(password));
+                              toast({ title: "Copiado!", description: "Senha copiada para a área de transferência" });
+                            }}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               <div className="pt-2">
