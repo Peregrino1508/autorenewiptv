@@ -15,6 +15,9 @@ export default function Checkout() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const checkoutStatus = searchParams.get("checkout_status");
+  const mpStatus = searchParams.get("status") || searchParams.get("collection_status");
+  const externalReference = searchParams.get("external_reference");
+  const mpPaymentId = searchParams.get("payment_id") || searchParams.get("collection_id");
   const userParam = searchParams.get("user");
   
   const [formData, setFormData] = useState({
@@ -25,6 +28,10 @@ export default function Checkout() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [registeredUser, setRegisteredUser] = useState<any>(null);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(
+    checkoutStatus === "success" || mpStatus === "approved"
+  );
 
   // Check if current user is admin
   const { data: isAdmin } = useQuery({
@@ -106,6 +113,82 @@ export default function Checkout() {
       searchUser(userParam);
     }
   }, [userParam]);
+
+  // Handle direct approved redirects from Mercado Pago
+  useEffect(() => {
+    if (checkoutStatus === "success" || mpStatus === "approved") {
+      setIsPaymentConfirmed(true);
+      setIsCheckingPayment(false);
+    }
+  }, [checkoutStatus, mpStatus]);
+
+  // For PIX/pending flows, poll payment status until approved
+  useEffect(() => {
+    const isFailureReturn = checkoutStatus === "failure" || mpStatus === "rejected" || mpStatus === "cancelled";
+    const isReturningFromGateway = Boolean(checkoutStatus || mpStatus || externalReference || mpPaymentId || userParam);
+
+    if (isPaymentConfirmed || isFailureReturn || !isReturningFromGateway) return;
+
+    let mounted = true;
+    let intervalId: number | undefined;
+    let timeoutId: number | undefined;
+
+    const checkPaymentStatus = async () => {
+      let queryResult: { status: string } | null = null;
+
+      if (externalReference) {
+        const { data } = await supabase
+          .from("payments")
+          .select("status")
+          .eq("id", externalReference)
+          .maybeSingle();
+        queryResult = data;
+      } else if (mpPaymentId) {
+        const { data } = await supabase
+          .from("payments")
+          .select("status")
+          .eq("mp_payment_id", mpPaymentId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        queryResult = data;
+      } else if (userParam) {
+        const { data } = await supabase
+          .from("payments")
+          .select("status")
+          .eq("iptv_username", userParam)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        queryResult = data;
+      }
+
+      if (!mounted || !queryResult) return;
+
+      if (queryResult.status === "approved") {
+        setIsPaymentConfirmed(true);
+        setIsCheckingPayment(false);
+        if (intervalId) window.clearInterval(intervalId);
+        if (timeoutId) window.clearTimeout(timeoutId);
+      }
+    };
+
+    setIsCheckingPayment(true);
+    checkPaymentStatus();
+
+    intervalId = window.setInterval(checkPaymentStatus, 3000);
+    timeoutId = window.setTimeout(() => {
+      if (!mounted) return;
+      setIsCheckingPayment(false);
+      if (intervalId) window.clearInterval(intervalId);
+    }, 120000);
+
+    return () => {
+      mounted = false;
+      if (intervalId) window.clearInterval(intervalId);
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [checkoutStatus, mpStatus, externalReference, mpPaymentId, userParam, isPaymentConfirmed]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,10 +281,16 @@ export default function Checkout() {
         )}
       </div>
 
-      {checkoutStatus !== 'success' && (
+      {!isPaymentConfirmed && (
         <Card className="w-full max-w-xl bg-slate-900/80 backdrop-blur-xl border-slate-800 shadow-2xl">
           <form onSubmit={handleSubmit}>
             <CardContent className="p-6 space-y-6">
+              {isCheckingPayment && (
+                <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-3 text-slate-300 text-sm">
+                  Pagamento identificado. Confirmando aprovação...
+                </div>
+              )}
+
               {/* Show registered user info if available */}
               {registeredUser && (
                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
@@ -270,10 +359,16 @@ export default function Checkout() {
             <CardFooter className="p-6 pt-0">
               <Button
                 type="submit"
-                disabled={isLoading || !registeredUser}
+                disabled={isLoading || !registeredUser || isCheckingPayment}
                 className="w-full h-12 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
               >
-                {isLoading ? "Gerando pagamento..." : registeredUser ? `Pagar R$ ${Number(registeredUser.amount_due).toFixed(2)} e Renovar Agora` : 'Digite um usuário válido'}
+                {isCheckingPayment
+                  ? "Confirmando pagamento..."
+                  : isLoading
+                    ? "Gerando pagamento..."
+                    : registeredUser
+                      ? `Pagar R$ ${Number(registeredUser.amount_due).toFixed(2)} e Renovar Agora`
+                      : 'Digite um usuário válido'}
               </Button>
             </CardFooter>
           </form>
@@ -281,7 +376,7 @@ export default function Checkout() {
       )}
 
       {/* Success Modal Overlay */}
-      {checkoutStatus === 'success' && (
+      {isPaymentConfirmed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950 flex flex-col items-center">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 mb-2">
