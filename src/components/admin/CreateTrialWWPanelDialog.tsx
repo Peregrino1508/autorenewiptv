@@ -16,6 +16,7 @@ export function CreateTrialWWPanelDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedPanel, setSelectedPanel] = useState("");
+  const [testType, setTestType] = useState("wplay");
   const [notes, setNotes] = useState("");
   const [result, setResult] = useState<any>(null);
 
