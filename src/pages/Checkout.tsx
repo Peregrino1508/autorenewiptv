@@ -122,6 +122,13 @@ export default function Checkout() {
     }
   }, [checkoutStatus, mpStatus]);
 
+  // Refresh user data when payment is confirmed to show new expiration date
+  useEffect(() => {
+    if (isPaymentConfirmed && userParam) {
+      searchUser(userParam);
+    }
+  }, [isPaymentConfirmed, userParam]);
+
   // For PIX/pending flows, poll payment status until approved
   useEffect(() => {
     const isFailureReturn = checkoutStatus === "failure" || mpStatus === "rejected" || mpStatus === "cancelled";
