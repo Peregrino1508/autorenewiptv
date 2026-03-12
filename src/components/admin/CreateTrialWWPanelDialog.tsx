@@ -183,8 +183,8 @@ export function CreateTrialWWPanelDialog() {
 
               <div className="grid gap-3 pt-2">
                 {(() => {
-                  const username = result?.username || result?.user || result?.login || result?.id || result?.name;
-                  const password = result?.password || result?.pass || result?.senha;
+                  const username = result?.username || result?.user || result?.login || result?.id || result?.name || result?.userIptv?.username;
+                  const password = result?.password || result?.pass || result?.senha || result?.userIptv?.password;
                   const hasCredentials = username || password;
 
                   if (!hasCredentials) {
