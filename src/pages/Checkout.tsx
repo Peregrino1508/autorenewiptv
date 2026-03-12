@@ -285,6 +285,12 @@ export default function Checkout() {
         <Card className="w-full max-w-xl bg-slate-900/80 backdrop-blur-xl border-slate-800 shadow-2xl">
           <form onSubmit={handleSubmit}>
             <CardContent className="p-6 space-y-6">
+              {isCheckingPayment && (
+                <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-3 text-slate-300 text-sm">
+                  Pagamento identificado. Confirmando aprovação...
+                </div>
+              )}
+
               {/* Show registered user info if available */}
               {registeredUser && (
                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
