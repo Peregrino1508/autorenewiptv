@@ -238,6 +238,25 @@ export function IptvUsersManager() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div>
+                <Label htmlFor="panel_id" className="text-slate-300">Painel IPTV *</Label>
+                <Select
+                  value={formData.panel_id}
+                  onValueChange={(value) => setFormData({ ...formData, panel_id: value })}
+                >
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                    <SelectValue placeholder="Selecione o painel" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    {panels?.map((panel) => (
+                      <SelectItem key={panel.id} value={panel.id} className="text-white">
+                        {panel.name} — {panel.url}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               
               <div>
                 <Label htmlFor="customer_name" className="text-slate-300">Nome do Cliente</Label>
