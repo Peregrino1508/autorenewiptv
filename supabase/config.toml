@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.create-trial]
 verify_jwt = false
+
+[functions.test-panel]
+verify_jwt = false
