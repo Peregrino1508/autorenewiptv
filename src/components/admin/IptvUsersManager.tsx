@@ -55,6 +55,19 @@ export function IptvUsersManager() {
     },
   });
 
+  const { data: panels } = useQuery({
+    queryKey: ["iptv-panels"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("iptv_panels")
+        .select("*")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const saveUser = useMutation({
     mutationFn: async (user: typeof formData & { id?: string }) => {
       if (user.id) {
