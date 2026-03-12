@@ -154,10 +154,10 @@ export function IptvUsersManager() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const { plan_id, ...rest } = formData;
+    const { plan_id, panel_id, ...rest } = formData;
     const userData = editingUser 
-      ? { ...rest, plan_id: plan_id || null, id: editingUser.id }
-      : { ...rest, plan_id: plan_id || null };
+      ? { ...rest, plan_id: plan_id || null, panel_id: panel_id || null, id: editingUser.id }
+      : { ...rest, plan_id: plan_id || null, panel_id: panel_id || null };
     saveUser.mutate(userData as any);
   };
 
