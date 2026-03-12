@@ -72,16 +72,20 @@ serve(async (req) => {
       'Content-Type': 'application/json'
     };
 
-    // 2. Create trial line
-    const trialNotes = notes || 'teste-auto';
-    const createUrl = `${apiBase}/lines/trial`;
+    // 2. Create trial line via POST /lines/test
+    const trialNotes = notes || '';
+    const createUrl = `${apiBase}/lines/test`;
     console.log(`[WWPanel Trial] Criando teste via POST ${createUrl}...`);
 
     const createResponse = await fetch(createUrl, {
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({
-        notes: trialNotes
+        notes: trialNotes,
+        package_p2p: "64399dca5ea59e8a1de2b083",
+        package_iptv: "30",
+        krator_package: "1",
+        testDuration: 4
       })
     });
     const createText = await createResponse.text();
