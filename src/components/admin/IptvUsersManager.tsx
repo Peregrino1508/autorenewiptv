@@ -26,6 +26,7 @@ export function IptvUsersManager() {
     customer_email: "",
     is_active: true,
     plan_id: "" as string,
+    panel_id: "" as string,
   });
 
   const { data: users, isLoading } = useQuery({
