@@ -185,10 +185,11 @@ export function CreateTrialDialog() {
               <div className="grid gap-3 pt-2">
                 {/* Flexible data detection */}
                 {(() => {
-                  const username = result.username || result.user || result.login || result.client_username;
-                  const password = result.password || result.pass || result.client_password;
-                  const token = result.token || result.hash;
-                  const url = result.url || result.dns || result.server;
+                  // Mapeamento mais amplo para encontrar o usuário
+                  const username = result.username || result.user || result.login || result.client_username || result.id || result.name || result.member_id || result.user_id;
+                  const password = result.password || result.pass || result.client_password || result.senha;
+                  const token = result.token || result.hash || result.auth_token;
+                  const url = result.url || result.dns || result.server || result.host;
                   const hasCredentials = username || password || token || url;
 
                   if (!hasCredentials) {
