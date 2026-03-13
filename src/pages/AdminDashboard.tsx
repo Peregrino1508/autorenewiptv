@@ -68,20 +68,17 @@ const AdminDashboard = () => {
       try {
         const { data, error } = await supabase
           .from("iptv_panels")
-          .select("id, name, panel_type, notes, test_button_name")
+          .select("id, name, panel_type, notes")
           .eq("is_active", true);
         
         if (error) throw error;
         
-        // Mapear painéis extraindo o nome do botão da coluna ou das notas (backup)
+        // Extrair nome do botão das notas (formato: ...||BTN:NomeDoBotão)
         return (data || []).map(p => {
-          let btnName = (p as any).test_button_name;
-          
-          // Se não tem na coluna, tenta extrair das notas
-          if (!btnName && p.notes && p.notes.includes("||BTN:")) {
-            btnName = p.notes.split("||BTN:")[1];
+          let btnName = "";
+          if (p.notes && p.notes.includes("||BTN:")) {
+            btnName = p.notes.split("||BTN:")[1] || "";
           }
-          
           return { ...p, test_button_name: btnName };
         }).filter(p => p.test_button_name);
 

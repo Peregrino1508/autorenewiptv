@@ -186,16 +186,16 @@ export function CreateTrialDialog() {
                 {/* Flexible data detection */}
                 {(() => {
                   // Mapeamento profundo para encontrar o usuário e senha
-                  const username = result.username || result.user || result.login || result.client_username || 
-                                  result.userIptv?.username || result.userIptv?.user || result.id || result.name;
+                  const r = result as any;
+                  const username = r.username || r.user || r.login || r.client_username || 
+                                  r.userIptv?.username || r.userIptv?.user || r.id || r.name;
                   
-                  const password = result.password || result.pass || result.client_password || 
-                                  result.userIptv?.password || result.userIptv?.pass || result.senha;
+                  const password = r.password || r.pass || r.client_password || 
+                                  r.userIptv?.password || r.userIptv?.pass || r.senha;
                   
-                  const token = result.token || result.hash || result.auth_token;
+                  const token = r.token || r.hash || r.auth_token;
                   
-                  // Tentar pegar a primeira URL curta disponível ou a URL padrão
-                  const url = result.urls?.m3u8Short || result.urls?.m3u8 || result.url || result.dns;
+                  const url = r.urls?.m3u8Short || r.urls?.m3u8 || r.url || r.dns;
                   
                   const hasCredentials = username || password || token || url;
 
