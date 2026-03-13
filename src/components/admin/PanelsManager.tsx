@@ -49,50 +49,27 @@ export function PanelsManager() {
     mutationFn: async (panel: typeof formData & { id?: string }) => {
       const { test_button_name, notes, ...otherData } = panel;
       
-      // Preparar notas com o marcador do botão para backup
+      // Salvar nome do botão dentro do campo notes com marcador ||BTN:
       const updatedNotes = test_button_name 
-        ? `${notes.split('||BTN:')[0]}||BTN:${test_button_name}`
-        : notes.split('||BTN:')[0];
+        ? `${(notes || "").split('||BTN:')[0]}||BTN:${test_button_name}`
+        : (notes || "").split('||BTN:')[0];
 
-      try {
-        // Tentar salvar na coluna correta primeiro
-        if (panel.id) {
-          const { error } = await supabase
-            .from("iptv_panels")
-            .update(panel as any)
-            .eq("id", panel.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase
-            .from("iptv_panels")
-            .insert([panel as any]);
-          if (error) throw error;
-        }
-      } catch (error: any) {
-        // Se a coluna não existir (Erro do cache de esquema), salvar no campo notes como backup
-        if (error.message?.includes("test_button_name") || error.code === "PGRST204" || error.message?.includes("column")) {
-          console.warn("Coluna test_button_name ausente. Usando campo 'notes' como backup...");
-          
-          const fallbackData = {
-            ...otherData,
-            notes: updatedNotes
-          };
+      const saveData = {
+        ...otherData,
+        notes: updatedNotes,
+      };
 
-          if (panel.id) {
-            const { error: retryError } = await supabase
-              .from("iptv_panels")
-              .update(fallbackData as any)
-              .eq("id", panel.id);
-            if (retryError) throw retryError;
-          } else {
-            const { error: retryError } = await supabase
-              .from("iptv_panels")
-              .insert([fallbackData as any]);
-            if (retryError) throw retryError;
-          }
-        } else {
-          throw error;
-        }
+      if (panel.id) {
+        const { error } = await supabase
+          .from("iptv_panels")
+          .update(saveData as any)
+          .eq("id", panel.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("iptv_panels")
+          .insert([saveData as any]);
+        if (error) throw error;
       }
     },
     onSuccess: () => {
