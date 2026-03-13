@@ -152,11 +152,10 @@ export function PanelsManager() {
   };
 
   const openEditDialog = (panel: Panel) => {
-    let btnName = (panel as any).test_button_name || "";
-    
-    // Backup: Se estiver vazio, tenta pegar das notas
-    if (!btnName && panel.notes && panel.notes.includes("||BTN:")) {
-      btnName = panel.notes.split("||BTN:")[1];
+    // Extrair nome do botão das notas (formato: ...||BTN:NomeDoBotão)
+    let btnName = "";
+    if (panel.notes && panel.notes.includes("||BTN:")) {
+      btnName = panel.notes.split("||BTN:")[1] || "";
     }
 
     setFormData({
