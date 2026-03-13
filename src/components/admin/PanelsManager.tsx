@@ -323,9 +323,9 @@ export function PanelsManager() {
                 <p className="text-slate-300">
                   <span className="font-medium">Tipo:</span> {panel.panel_type.toUpperCase()}
                 </p>
-                {(panel as any).test_button_name && (
+                {panel.notes?.includes("||BTN:") && (
                   <p className="text-slate-300">
-                    <span className="font-medium text-amber-400">Botão:</span> {(panel as any).test_button_name}
+                    <span className="font-medium text-amber-400">Botão:</span> {panel.notes.split("||BTN:")[1]}
                   </p>
                 )}
               </div>
