@@ -341,7 +341,7 @@ const AdminDashboard = () => {
               </TabsContent>
 
               <TabsContent value="spreadsheet" className="mt-6">
-                <SpreadsheetManager />
+                <SpreadsheetManager searchTerm={searchTerm} />
               </TabsContent>
             </Tabs>
           </CardContent>

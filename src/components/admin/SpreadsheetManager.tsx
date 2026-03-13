@@ -57,7 +57,11 @@ const COLORS = [
   { name: "Turquesa", value: "text-cyan-400" },
 ];
 
-export function SpreadsheetManager() {
+interface SpreadsheetManagerProps {
+  searchTerm?: string;
+}
+
+export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps) {
   const queryClient = useQueryClient();
   const [selectedMonth, setSelectedMonth] = useState(`${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()}`);
   const [sortConfig, setSortConfig] = useState<{ key: keyof CustomerRecord; direction: 'asc' | 'desc' } | null>(null);
@@ -413,7 +417,14 @@ export function SpreadsheetManager() {
 
   if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-purple-500" /></div>;
 
-  const displayRecords = sortedRecords;
+  const displayRecords = sortedRecords.filter(record => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      record.client_name.toLowerCase().includes(search) ||
+      record.username.toLowerCase().includes(search)
+    );
+  });
 
   const renderHeader = (label: string, initialWidth: string, sortKey?: keyof CustomerRecord) => (
     <TableHead 
