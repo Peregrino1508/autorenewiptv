@@ -15,7 +15,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart, DollarSign, FileText, Menu, FileSpreadsheet } from "lucide-react";
+import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart, DollarSign, FileText, Menu, FileSpreadsheet, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -27,6 +28,7 @@ import {
 const AdminDashboard = () => {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleSignOut = async () => {
     await signOut();
@@ -247,8 +249,17 @@ const AdminDashboard = () => {
 
         {/* Main Content */}
         <Card className="bg-white/5 backdrop-blur-md border-white/10">
-          <CardHeader>
+          <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
             <CardTitle className="text-white">Gestão do Sistema</CardTitle>
+            <div className="relative w-full md:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Buscar por nome ou número..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:bg-white/10 transition-colors"
+              />
+            </div>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="panels" className="w-full">
@@ -309,7 +320,7 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="users" className="mt-6">
-            <IptvUsersManager />
+            <IptvUsersManager searchTerm={searchTerm} />
           </TabsContent>
 
           <TabsContent value="plans" className="mt-6">
@@ -317,7 +328,7 @@ const AdminDashboard = () => {
           </TabsContent>
 
               <TabsContent value="payments" className="mt-6">
-                <PaymentsViewer />
+                <PaymentsViewer searchTerm={searchTerm} />
               </TabsContent>
 
               <TabsContent value="financial" className="mt-6">

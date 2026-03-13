@@ -13,8 +13,11 @@ import { Plus, Edit, Trash2, User, Copy, ExternalLink } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type IptvUser = Tables<"iptv_users">;
+interface IptvUsersManagerProps {
+  searchTerm?: string;
+}
 
-export function IptvUsersManager() {
+export function IptvUsersManager({ searchTerm = "" }: IptvUsersManagerProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<IptvUser | null>(null);
   const queryClient = useQueryClient();
@@ -299,7 +302,14 @@ export function IptvUsersManager() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {users?.map((user) => (
+        {users?.filter(user => {
+          if (!searchTerm) return true;
+          const search = searchTerm.toLowerCase();
+          return (
+            user.username.toLowerCase().includes(search) ||
+            (user.customer_name?.toLowerCase().includes(search) ?? false)
+          );
+        }).map((user) => (
           <Card key={user.id} className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
             <CardHeader className="pb-2">
               <CardTitle className="flex justify-between items-center text-white">

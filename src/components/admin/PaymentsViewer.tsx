@@ -66,7 +66,11 @@ function RenewalStatusBadge({ status, message }: { status: string | null; messag
   );
 }
 
-export function PaymentsViewer() {
+interface PaymentsViewerProps {
+  searchTerm?: string;
+}
+
+export function PaymentsViewer({ searchTerm = "" }: PaymentsViewerProps) {
   const { data: payments, isLoading } = useQuery({
     queryKey: ["iptv-payments"],
     queryFn: async () => {
@@ -104,7 +108,14 @@ export function PaymentsViewer() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {payments?.map((payment) => (
+              {payments?.filter(payment => {
+                if (!searchTerm) return true;
+                const search = searchTerm.toLowerCase();
+                return (
+                  payment.iptv_username.toLowerCase().includes(search) ||
+                  (payment.customer_name?.toLowerCase().includes(search) ?? false)
+                );
+              }).map((payment) => (
                 <TableRow key={payment.id} className="border-slate-700 hover:bg-slate-800/60">
                   <TableCell className="text-slate-300 font-medium whitespace-nowrap">
                     {format(new Date(payment.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
