@@ -35,10 +35,44 @@ async function renewViaWWPanel(panel: any, username: string, durationDays: numbe
     'Content-Type': 'application/json'
   };
 
-  // 2. Tentar estender usando o username diretamente como ID
-  // Na API WWPanel, username e id costumam ser o mesmo valor numérico
-  const userId = username;
-  const extendUrl = `${apiBase}/lines/extend/${userId}`;
+  // 2. Buscar o ID interno do usuário via API de listagem
+  console.log(`[WWPanel] Buscando ID interno do usuário ${username}...`);
+  let internalUserId: string | null = null;
+
+  // Tentar buscar na lista de linhas com search
+  const searchUrl = `${apiBase}/lines?search=${encodeURIComponent(username)}&limit=100`;
+  console.log(`[WWPanel] GET ${searchUrl}`);
+  const searchResponse = await fetch(searchUrl, { headers: authHeaders });
+  const searchText = await searchResponse.text();
+  console.log(`[WWPanel] Search response status: ${searchResponse.status}, body: ${searchText.substring(0, 500)}`);
+
+  if (searchResponse.ok) {
+    try {
+      const searchData = JSON.parse(searchText);
+      // Handle different response formats: { data: [...] }, { items: [...] }, or direct array
+      const lines = searchData.data || searchData.items || searchData.rows || (Array.isArray(searchData) ? searchData : []);
+      if (Array.isArray(lines)) {
+        const found = lines.find((line: any) =>
+          String(line.username) === String(username) ||
+          String(line.token) === String(username) ||
+          String(line.name) === String(username)
+        );
+        if (found) {
+          internalUserId = String(found.id || found._id);
+          console.log(`[WWPanel] Usuário encontrado! ID interno: ${internalUserId}`);
+        }
+      }
+    } catch (e) {
+      console.error(`[WWPanel] Erro ao parsear resultado da busca:`, e);
+    }
+  }
+
+  if (!internalUserId) {
+    throw new Error(`[WWPanel] Usuário ${username} não encontrado na API do painel. Verifique se o username está correto.`);
+  }
+
+  // 3. Estender usando o ID interno numérico
+  const extendUrl = `${apiBase}/lines/extend/${internalUserId}`;
   console.log(`[WWPanel] Chamando PATCH ${extendUrl} com credits=${months}...`);
 
   const extendResponse = await fetch(extendUrl, {
