@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { FlaskConical, Loader2, Play, Copy, CheckCircle2, MonitorPlay } from "lucide-react";
+import { FlaskConical, Loader2, Play, Copy, CheckCircle2, MonitorPlay, Smartphone, Monitor } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface DynamicTrialDialogProps {
   panel: {
@@ -17,6 +18,7 @@ interface DynamicTrialDialogProps {
 export function DynamicTrialDialog({ panel }: DynamicTrialDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [systemType, setSystemType] = useState<"p2p" | "iptv">("p2p");
   const [result, setResult] = useState<Record<string, any> | null>(null);
 
   const handleCreate = async () => {
@@ -32,7 +34,7 @@ export function DynamicTrialDialog({ panel }: DynamicTrialDialogProps) {
       };
 
       if (panel.panel_type !== "wwpanel") {
-        body.system_type = "p2p"; // Default for generic panels
+        body.system_type = systemType;
       } else {
         body.test_type = "wplay"; // Default for WWPanel
       }
@@ -215,6 +217,30 @@ export function DynamicTrialDialog({ panel }: DynamicTrialDialogProps) {
                 O sistema gerará credenciais automaticamente com duração padrão de teste.
               </p>
             </div>
+
+            {panel.panel_type !== "wwpanel" && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-slate-400 px-1">Selecione o Sistema:</label>
+                <Tabs value={systemType} onValueChange={(v) => setSystemType(v as any)} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 p-1 h-12">
+                    <TabsTrigger 
+                      value="p2p" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-white transition-all"
+                    >
+                      <Smartphone className="w-4 h-4 mr-2" />
+                      P2P
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="iptv" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-white transition-all"
+                    >
+                      <Monitor className="w-4 h-4 mr-2" />
+                      IPTV
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            )}
             
             <Button 
               className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 py-6 text-lg"
