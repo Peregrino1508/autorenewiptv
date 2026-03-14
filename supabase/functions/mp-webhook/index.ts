@@ -29,11 +29,19 @@ async function renewViaWWPanel(panel: any, username: string, durationDays: numbe
 
   console.log(`[WWPanel] Iniciando renovação para usuário ${username} em ${apiBase}`);
 
+  const commonHeaders = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Origin': apiBase,
+    'Referer': `${apiBase}/`
+  };
+
   // 1. Gerar token fixo via /auth/static-token
   console.log(`[WWPanel] Gerando token via POST /auth/static-token...`);
   const tokenResponse = await fetch(`${apiBase}/auth/static-token`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...commonHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify({ username: adminUser, password: adminPassword })
   });
   const tokenText = await tokenResponse.text();
@@ -50,6 +58,7 @@ async function renewViaWWPanel(panel: any, username: string, durationDays: numbe
 
   const authToken = tokenData.token;
   const authHeaders = {
+    ...commonHeaders,
     'Authorization': `Bearer ${authToken}`,
     'Content-Type': 'application/json'
   };
