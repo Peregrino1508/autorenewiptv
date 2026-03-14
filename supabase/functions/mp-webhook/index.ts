@@ -37,9 +37,9 @@ async function renewViaWWPanel(panel: any, username: string, durationDays: numbe
     'Referer': `${apiBase}/`
   };
 
-  // 1. Gerar token fixo via /auth/static-token
-  console.log(`[WWPanel] Gerando token via POST /auth/static-token...`);
-  const tokenResponse = await fetch(`${apiBase}/auth/static-token`, {
+  // 1. Gerar token fixo via /auth/login
+  console.log(`[WWPanel] Gerando token via POST /auth/login...`);
+  const tokenResponse = await fetch(`${apiBase}/auth/login`, {
     method: 'POST',
     headers: { ...commonHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify({ username: adminUser, password: adminPassword })
