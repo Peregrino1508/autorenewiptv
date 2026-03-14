@@ -78,10 +78,15 @@ export default function Success() {
             <p className="text-slate-300 text-lg leading-relaxed">
               Olá {userData?.customer_name || userParam ? <span className="text-blue-400 font-bold">{userData?.customer_name || userParam}</span> : 'cliente'}, sua assinatura foi processada e os créditos já estão disponíveis na sua conta! 🎈
             </p>
-            {userData?.expires_at && (
+            {(userData?.expires_at || userParam) && (
               <div className="mt-4 pt-4 border-t border-white/5">
                 <p className="text-slate-400 text-sm">
-                  Próxima renovação: <span className="text-green-400 font-bold">{format(new Date(userData.expires_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+                  Próxima renovação: <span className="text-green-400 font-bold">
+                    {userData?.expires_at
+                      ? format(new Date(userData.expires_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                      : format(new Date(new Date().setDate(new Date().getDate() + 30)), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                    }
+                  </span>
                 </p>
               </div>
             )}

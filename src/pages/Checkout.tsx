@@ -416,7 +416,7 @@ export default function Checkout() {
                 <p className="text-slate-300 text-base leading-relaxed">
                   Olá {registeredUser?.customer_name || userParam ? <span className="text-blue-400 font-bold">{registeredUser?.customer_name || userParam}</span> : 'cliente'}, sua assinatura foi processada e os créditos já estão disponíveis na sua conta! 🎈
                 </p>
-                {(registeredUser?.expires_at || userParam === 'teste') && (
+                {(registeredUser?.expires_at || userParam) && (
                   <div className="mt-4 pt-4 border-t border-white/5">
                     <p className="text-slate-400 text-sm">
                       Próxima renovação: <span className="text-green-400 font-bold">

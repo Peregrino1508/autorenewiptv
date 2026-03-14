@@ -1,6 +1,25 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// ==== HELPER FUNCS ====
+function formatExpirationDate(expDate: any): string | null {
+  if (!expDate || expDate === 'N/A') return null;
+  
+  if (typeof expDate === 'string' && expDate.includes('-')) {
+    const d = new Date(expDate);
+    if (!isNaN(d.getTime())) return d.toISOString();
+  }
+
+  const numericDate = Number(expDate);
+  if (!isNaN(numericDate) && numericDate > 0) {
+    const ms = numericDate > 10000000000 ? numericDate : numericDate * 1000;
+    const d = new Date(ms);
+    if (!isNaN(d.getTime())) return d.toISOString();
+  }
+
+  return null;
+}
+
 // ==== WWPANEL RENEWAL ====
 async function renewViaWWPanel(panel: any, username: string, durationDays: number, supabase: any, externalReference: string) {
   const apiBase = panel.url.replace(/\/+$/, '');
@@ -102,10 +121,11 @@ async function renewViaWWPanel(panel: any, username: string, durationDays: numbe
     .eq('id', externalReference);
 
   // Atualizar a data de expiração no cadastro do usuário
-  if (newExpDate !== 'N/A') {
+  const formattedExpDate = formatExpirationDate(newExpDate);
+  if (formattedExpDate) {
     await supabase
       .from('iptv_users')
-      .update({ expires_at: newExpDate })
+      .update({ expires_at: formattedExpDate })
       .eq('username', username);
   }
 
@@ -212,10 +232,11 @@ async function renewViaXuiOne(panel: any, username: string, durationDays: number
       })
       .eq('id', externalReference);
 
-    if (newExpDate !== 'N/A') {
+    const formattedExpDate = formatExpirationDate(newExpDate);
+    if (formattedExpDate) {
       await supabase
         .from('iptv_users')
-        .update({ expires_at: newExpDate })
+        .update({ expires_at: formattedExpDate })
         .eq('username', username);
     }
 
