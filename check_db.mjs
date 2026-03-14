@@ -7,9 +7,11 @@ const supabase = createClient(
 
 async function main() {
   const { data, error } = await supabase
-    .from('iptv_users')
-    .select('*')
-    .eq('username', 'h33f962');
+    .from('payments')
+    .select('*, iptv_panels!inner(*)')
+    .eq('iptv_panels.panel_type', 'xui_one')
+    .order('created_at', { ascending: false })
+    .limit(5);
     
   if (error) {
     console.error("Error fetching payment:", error);
