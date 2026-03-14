@@ -11,6 +11,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  try {
     const startTime = Date.now();
     const log = (msg: string) => console.log(`[WWPanel Trial][${Date.now() - startTime}ms] ${msg}`);
 
@@ -58,16 +59,15 @@ serve(async (req) => {
       'Referer': `${apiBase}/`
     };
 
-    // 1. Auth via static-token
-    log(`Autenticando em ${apiBase}...`);
-    const tokenResponse = await fetch(`${apiBase}/auth/static-token`, {
+    // 1. Auth via /auth/login
+    log(`Autenticando via /auth/login em ${apiBase}...`);
+    const tokenResponse = await fetch(`${apiBase}/auth/login`, {
       method: 'POST',
       headers: { ...commonHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: adminUser, password: adminPassword })
     });
 
     const tokenText = await tokenResponse.text();
-    const isJsonToken = tokenResponse.headers.get('content-type')?.includes('application/json');
 
     if (!tokenResponse.ok) {
       if (tokenText.includes('<!DOCTYPE html>')) {
@@ -78,7 +78,7 @@ serve(async (req) => {
 
     let tokenData;
     try { 
-      tokenData = isJsonToken ? JSON.parse(tokenText) : { token: tokenText.trim() }; 
+      tokenData = JSON.parse(tokenText); 
     } catch (e) {
       throw new Error(`Falha ao processar token: ${tokenText.substring(0, 100)}`);
     }
