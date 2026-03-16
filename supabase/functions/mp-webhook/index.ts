@@ -182,6 +182,7 @@ async function renewViaXuiOne(panel: any, username: string, durationDays: number
   // 2. Buscar usuário nos sistemas
   let internalUserId: string | null = null;
   let foundInSystem: string | null = null;
+  let userDataFromApi: any = null;
 
   for (const systemPath of systemsToTry) {
     const listUrl = `${apiRoot}/${systemPath}/list?limit=100&page=1&orderBy=id&order=desc&search=${encodeURIComponent(username)}`;
@@ -202,6 +203,7 @@ async function renewViaXuiOne(panel: any, username: string, durationDays: number
         if (found) {
           internalUserId = String(found.id);
           foundInSystem = systemPath;
+          userDataFromApi = found;
           console.log(`[XUI] Usuário encontrado no sistema ${systemPath}! ID interno: ${internalUserId}`);
           break;
         }
@@ -251,7 +253,55 @@ async function renewViaXuiOne(panel: any, username: string, durationDays: number
 
     console.log(`[XUI] Renovação concluída com sucesso para ${username} no sistema ${foundInSystem}! Nova expiração: ${newExpDate}`);
   } else {
-    throw new Error(`[XUI] API extend falhou no sistema ${foundInSystem}: ${extendText.substring(0, 200)}`);
+    // FALLBACK: If extend fails, it might be a Trial. Try to convert it via deep PUT update.
+    console.log(`[XUI] Extend falhou. Tentando conversão completa de Teste para Oficial (Trial to Official)...`);
+    
+    // Injecting mandatory fields like WhatsApp if they are missing
+    const convertBody = {
+        ...userDataFromApi,
+        isTrial: false, // Forces official mode
+        whatsapp: userDataFromApi?.whatsapp || "+5511999999999", // Random fallback
+        notes: "Ativado pelo Sistema Automático",
+        month: months
+    };
+
+    const convertUrl = `${apiRoot}/${foundInSystem}/${internalUserId}?${extendQs}`;
+    console.log(`[XUI] Chamando PUT ${convertUrl} com conversão...`);
+    
+    const convertResponse = await fetch(convertUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(convertBody)
+    });
+    
+    const convertText = await convertResponse.text();
+    console.log(`[XUI] Convert response status: ${convertResponse.status}, body: ${convertText.substring(0, 300)}`);
+    
+    let convertData;
+    try { convertData = JSON.parse(convertText); } catch (e) {}
+
+    if (convertData?.success === true || convertResponse.ok) {
+        let newExpDate = convertData?.result?.endTime || 'N/A';
+        
+        await supabase
+          .from('payments')
+          .update({
+            renewal_status: 'success',
+            renewal_message: `[XUI-Conv] Teste ${username} (ID: ${internalUserId}) convertido no sistema ${foundInSystem} por ${months} mês(es).`,
+          })
+          .eq('id', externalReference);
+
+        const formattedExpDate = formatExpirationDate(newExpDate);
+        if (formattedExpDate && newExpDate !== 'N/A') {
+          await supabase
+            .from('iptv_users')
+            .update({ expires_at: formattedExpDate })
+            .eq('username', username);
+        }
+        console.log(`[XUI] Conversão de Teste concluída com sucesso para ${username}!`);
+    } else {
+        throw new Error(`[XUI] Falha dupla (Extend e Convert) no sistema ${foundInSystem}: ${convertText.substring(0, 200)}`);
+    }
   }
 }
 
