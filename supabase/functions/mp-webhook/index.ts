@@ -1,8 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'Erro desconhecido';
+
 // ==== HELPER FUNCS ====
-function formatExpirationDate(expDate: any): string | null {
   if (!expDate || expDate === 'N/A') return null;
   
   if (typeof expDate === 'string' && expDate.includes('-')) {
