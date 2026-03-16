@@ -124,9 +124,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error creating trial:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido ao criar teste';
     return new Response(JSON.stringify({
       success: false,
-      error: error.message
+      error: errorMessage
     }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
