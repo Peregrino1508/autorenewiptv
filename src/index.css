@@ -104,6 +104,18 @@ All colors MUST be HSL.
   }
 }
 
+/* Ocultar forçadamente a marca d'água / badge do Lovable */
+#lovable-badge,
+.lovable-tagger,
+[data-lovable-tagger],
+[id^="lovable-"],
+div:has(> button > svg.lucide-sparkles) {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 @layer utilities {
   /* Estilo premium para barra de rolagem horizontal */
   .overflow-x-auto::-webkit-scrollbar {
