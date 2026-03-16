@@ -5,6 +5,7 @@ const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Erro desconhecido';
 
 // ==== HELPER FUNCS ====
+function formatExpirationDate(expDate: any): string | null {
   if (!expDate || expDate === 'N/A') return null;
   
   if (typeof expDate === 'string' && expDate.includes('-')) {
