@@ -436,7 +436,7 @@ serve(async (req) => {
           .from('payments')
           .update({
             renewal_status: 'failed',
-            renewal_message: renewError.message,
+            renewal_message: getErrorMessage(renewError),
           })
           .eq('id', externalReference);
       }
@@ -446,6 +446,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Webhook error:', error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: getErrorMessage(error) }), { status: 500 });
   }
 });
