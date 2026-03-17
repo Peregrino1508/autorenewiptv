@@ -184,71 +184,6 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
     return () => window.removeEventListener('mousedown', handleClickOutside);
   }, [isEditing]);
 
-  // Handle global keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!activeCell) return;
-
-      // If we are currently editing a cell, let the input handle most keys
-      if (isEditing) {
-        if (e.key === "Escape") {
-          setIsEditing(false);
-        } else if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          setIsEditing(false);
-          // Move down on Enter like Excel
-          if (activeCell.row < displayRecords.length - 1) {
-            setActiveCell({ row: activeCell.row + 1, col: activeCell.col });
-          }
-        }
-        return;
-      }
-
-      // If not editing, handle navigation
-      switch (e.key) {
-        case "ArrowUp":
-          e.preventDefault();
-          if (activeCell.row > 0) {
-            setActiveCell({ row: activeCell.row - 1, col: activeCell.col });
-          }
-          break;
-        case "ArrowDown":
-          e.preventDefault();
-          if (activeCell.row < displayRecords.length - 1) {
-            setActiveCell({ row: activeCell.row + 1, col: activeCell.col });
-          }
-          break;
-        case "ArrowLeft":
-          e.preventDefault();
-          if (activeCell.col > 0) {
-            setActiveCell({ row: activeCell.row, col: activeCell.col - 1 });
-          }
-          break;
-        case "ArrowRight":
-          e.preventDefault();
-          if (activeCell.col < editableColumns.length - 1) {
-            setActiveCell({ row: activeCell.row, col: activeCell.col + 1 });
-          }
-          break;
-        case "Enter":
-          e.preventDefault();
-          setIsEditing(true);
-          break;
-        case "Escape":
-          setActiveCell(null);
-          break;
-        // If user starts typing alphanumeric characters, auto-start editing
-        default:
-          if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-            setIsEditing(true);
-          }
-          break;
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeCell, isEditing, displayRecords.length]);
 
   useEffect(() => {
     if (records) {
@@ -574,6 +509,72 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
       record.username.toLowerCase().includes(search)
     );
   });
+
+  // Handle global keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!activeCell) return;
+
+      // If we are currently editing a cell, let the input handle most keys
+      if (isEditing) {
+        if (e.key === "Escape") {
+          setIsEditing(false);
+        } else if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          setIsEditing(false);
+          // Move down on Enter like Excel
+          if (activeCell.row < displayRecords.length - 1) {
+            setActiveCell({ row: activeCell.row + 1, col: activeCell.col });
+          }
+        }
+        return;
+      }
+
+      // If not editing, handle navigation
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          if (activeCell.row > 0) {
+            setActiveCell({ row: activeCell.row - 1, col: activeCell.col });
+          }
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          if (activeCell.row < displayRecords.length - 1) {
+            setActiveCell({ row: activeCell.row + 1, col: activeCell.col });
+          }
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          if (activeCell.col > 0) {
+            setActiveCell({ row: activeCell.row, col: activeCell.col - 1 });
+          }
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          if (activeCell.col < editableColumns.length - 1) {
+            setActiveCell({ row: activeCell.row, col: activeCell.col + 1 });
+          }
+          break;
+        case "Enter":
+          e.preventDefault();
+          setIsEditing(true);
+          break;
+        case "Escape":
+          setActiveCell(null);
+          break;
+        // If user starts typing alphanumeric characters, auto-start editing
+        default:
+          if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            setIsEditing(true);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeCell, isEditing, displayRecords.length]);
 
   const renderHeader = (label: string, initialWidth: string, sortKey?: keyof CustomerRecord) => (
     <TableHead 
