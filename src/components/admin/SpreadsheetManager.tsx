@@ -316,6 +316,7 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
           ...rest,
           value: 0,
           expense: 0,
+          profit: 0,
           status: "",
           expiry_month: next_renewal, // Old renewal becomes expiry month
           next_renewal: newNextRenewal, // New renewal is next month
@@ -380,7 +381,11 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
   const updateLocalRecord = (id: string, field: keyof CustomerRecord, value: any) => {
     setLocalRecords(prev => prev.map(r => {
       if (r.id === id) {
-        return { ...r, [field]: value };
+        const updatedRecord = { ...r, [field]: value };
+        if (field === 'value' || field === 'expense') {
+          updatedRecord.profit = (Number(updatedRecord.value) || 0) - (Number(updatedRecord.expense) || 0);
+        }
+        return updatedRecord;
       }
       return r;
     }));
