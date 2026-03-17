@@ -155,10 +155,16 @@ async function renewViaXuiOne(panel: any, username: string, durationDays: number
 
   console.log(`[XUI] Iniciando renovação para usuário ${username}. Sistema primário: ${primarySystem}`);
 
+  const commonHeaders = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
+  };
+
   // 1. Login via POST /auth/login
   const loginResponse = await fetch(`${apiRoot}/auth/login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...commonHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify({ username: adminUser, password: adminPassword })
   });
   const loginText = await loginResponse.text();
@@ -175,6 +181,7 @@ async function renewViaXuiOne(panel: any, username: string, durationDays: number
 
   const authToken = loginData.token;
   const authHeaders = {
+    ...commonHeaders,
     'Authorization': `Bearer ${authToken}`,
     'Content-Type': 'application/json'
   };
@@ -223,7 +230,7 @@ async function renewViaXuiOne(panel: any, username: string, durationDays: number
   console.log(`[XUI] Chamando PUT extend para usuário ID ${internalUserId} no sistema ${foundInSystem} com month=${months}...`);
   const extendResponse = await fetch(extendUrl, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders,
     body: JSON.stringify({ month: months })
   });
   const extendText = await extendResponse.text();
@@ -270,7 +277,7 @@ async function renewViaXuiOne(panel: any, username: string, durationDays: number
     
     const convertResponse = await fetch(convertUrl, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify(convertBody)
     });
     
