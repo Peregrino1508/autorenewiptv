@@ -68,6 +68,26 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
   const [localRecords, setLocalRecords] = useState<CustomerRecord[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Excel-like navigation state
+  const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Define editable columns in order for navigation
+  const editableColumns: { key: keyof CustomerRecord; type: string }[] = [
+    { key: "client_name", type: "text" },
+    { key: "username", type: "text" },
+    { key: "password", type: "text" },
+    { key: "expiry_month", type: "text" },
+    { key: "status", type: "text" },
+    { key: "next_renewal", type: "date" },
+    { key: "contact_number", type: "text" },
+    { key: "value", type: "number" },
+    { key: "expense", type: "number" },
+    // profit is skipped in editable columns because it's calculated
+    { key: "subscription_value", type: "number" },
+    { key: "login_type", type: "text" }
+  ];
 
   // Load settings
   const { data: settings } = useQuery({
@@ -145,6 +165,90 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
       }
     }
   }, [settings]);
+
+  // Handle global click outside to deselect cell
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      // If clicking outside the table, clear selection
+      const target = e.target as HTMLElement;
+      if (!target.closest('.cursor-cell') && !target.closest('.lucide')) {
+         // Only clearing edit mode, keeping active cell might be useful, 
+         // but typical Excel clears or keeps it. Let's just exit edit mode.
+         if (isEditing) {
+           // We let the input onBlur handle it, or force it here
+           setIsEditing(false);
+         }
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, [isEditing]);
+
+  // Handle global keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!activeCell) return;
+
+      // If we are currently editing a cell, let the input handle most keys
+      if (isEditing) {
+        if (e.key === "Escape") {
+          setIsEditing(false);
+        } else if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          setIsEditing(false);
+          // Move down on Enter like Excel
+          if (activeCell.row < displayRecords.length - 1) {
+            setActiveCell({ row: activeCell.row + 1, col: activeCell.col });
+          }
+        }
+        return;
+      }
+
+      // If not editing, handle navigation
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          if (activeCell.row > 0) {
+            setActiveCell({ row: activeCell.row - 1, col: activeCell.col });
+          }
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          if (activeCell.row < displayRecords.length - 1) {
+            setActiveCell({ row: activeCell.row + 1, col: activeCell.col });
+          }
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          if (activeCell.col > 0) {
+            setActiveCell({ row: activeCell.row, col: activeCell.col - 1 });
+          }
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          if (activeCell.col < editableColumns.length - 1) {
+            setActiveCell({ row: activeCell.row, col: activeCell.col + 1 });
+          }
+          break;
+        case "Enter":
+          e.preventDefault();
+          setIsEditing(true);
+          break;
+        case "Escape":
+          setActiveCell(null);
+          break;
+        // If user starts typing alphanumeric characters, auto-start editing
+        default:
+          if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            setIsEditing(true);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeCell, isEditing, displayRecords.length]);
 
   useEffect(() => {
     if (records) {
@@ -392,29 +496,69 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
     setIsDirty(true);
   };
 
-  const renderCell = (record: CustomerRecord, field: keyof CustomerRecord, type: string = "text") => {
+  const renderCell = (record: CustomerRecord, rowIndex: number, field: keyof CustomerRecord, type: string = "text") => {
     const isText = type === "text";
     const textColor = record.text_color || "text-white";
     
+    // Find column index for navigation (returns -1 if it's the profit column which we skip in navigation)
+    const colIndex = editableColumns.findIndex(c => c.key === field);
+    
+    const isActive = activeCell?.row === rowIndex && activeCell?.col === colIndex;
+    const isCurrentlyEditing = isActive && isEditing;
+    
+    // Cell styling classes
+    const baseClasses = `w-full h-8 flex items-center px-2 border-r border-white/10 ${textColor} relative transition-all duration-75`;
+    const activeClasses = isActive ? "ring-2 ring-purple-500 bg-purple-500/20 z-10" : "";
+    const displayValue = record[field];
+
     return (
-      <div className={`w-full border-r border-white/10 ${textColor}`}>
-        {isText ? (
-          <textarea
-            value={record[field] as string}
-            onChange={(e) => updateLocalRecord(record.id, field, e.target.value)}
-            className={`bg-transparent border-none focus:ring-1 focus:ring-purple-500 w-full h-8 text-xs ${textColor} p-2 resize-none overflow-hidden`}
-            rows={1}
-          />
+      <div 
+        className={`${baseClasses} ${activeClasses} cursor-cell`}
+        onClick={() => {
+          if (colIndex !== -1) {
+            setActiveCell({ row: rowIndex, col: colIndex });
+            if (!isCurrentlyEditing && isActive) {
+               // Optional: single click on already active cell enters edit mode? 
+               // Excel requires double click or enter, we use doubleClick below.
+            } else {
+               setIsEditing(false);
+            }
+          }
+        }}
+        onDoubleClick={() => {
+           if (colIndex !== -1) {
+             setActiveCell({ row: rowIndex, col: colIndex });
+             setIsEditing(true);
+           }
+        }}
+      >
+        {isCurrentlyEditing ? (
+          isText ? (
+            <textarea
+              autoFocus
+              value={displayValue as string}
+              onChange={(e) => updateLocalRecord(record.id, field, e.target.value)}
+              onBlur={() => setIsEditing(false)}
+              className={`absolute inset-0 bg-slate-800 border-none focus:ring-0 w-full h-full text-xs ${textColor} p-2 resize-none overflow-hidden z-20`}
+              rows={1}
+            />
+          ) : (
+            <Input
+              autoFocus
+              type={type}
+              value={displayValue as any}
+              onChange={(e) => {
+                const val = type === "number" ? parseFloat(e.target.value) || 0 : e.target.value;
+                updateLocalRecord(record.id, field, val);
+              }}
+              onBlur={() => setIsEditing(false)}
+              className={`absolute inset-0 bg-slate-800 border-none focus:ring-0 w-full h-full text-xs ${textColor} p-1 md:p-2 z-20 rounded-none`}
+            />
+          )
         ) : (
-          <Input
-            type={type}
-            value={record[field] as any}
-            onChange={(e) => {
-              const val = type === "number" ? parseFloat(e.target.value) || 0 : e.target.value;
-              updateLocalRecord(record.id, field, val);
-            }}
-            className={`bg-transparent border-none focus:ring-1 focus:ring-purple-500 h-8 text-xs ${textColor} p-2 w-full`}
-          />
+          <div className="w-full truncate text-xs">
+            {type === "number" ? Number(displayValue || 0).toString() : (displayValue as string)}
+          </div>
         )}
       </div>
     );
@@ -532,25 +676,25 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
           </TableHeader>
           <TableBody>
             {displayRecords.map((record, idx) => (
-              <TableRow key={record.id || `new-${idx}`} className="border-white/5 hover:bg-white/5 transition-colors h-8">
-                <TableCell className="p-0">{renderCell(record, "client_name")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "username")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "password")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "expiry_month")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "status")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "next_renewal", "date")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "contact_number")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "value", "number")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "expense", "number")}</TableCell>
+              <TableRow key={record.id || `new-${idx}`} className={`border-white/5 hover:bg-white/5 transition-colors h-8 ${activeCell?.row === idx ? 'bg-white/5' : ''}`}>
+                <TableCell className="p-0">{renderCell(record, idx, "client_name")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, idx, "username")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, idx, "password")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, idx, "expiry_month")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, idx, "status")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, idx, "next_renewal", "date")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, idx, "contact_number")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, idx, "value", "number")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, idx, "expense", "number")}</TableCell>
                 <TableCell className="p-0">
-                  <div className="px-2 flex items-center h-8 border-r border-white/10 w-full">
-                    <span className="text-xs text-green-400 font-medium">
+                  <div className="px-2 flex items-center h-8 border-r border-white/10 w-full bg-white/5 cursor-default">
+                    <span className={`text-xs ${record.profit < 0 ? 'text-red-400' : 'text-green-400'} font-medium`}>
                       R$ {(record.profit || 0).toFixed(2)}
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className="p-0">{renderCell(record, "subscription_value", "number")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, "login_type")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, idx, "subscription_value", "number")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, idx, "login_type")}</TableCell>
                 <TableCell className="p-0">
                   <div className="flex items-center justify-center gap-1 h-8 w-[80px]">
                     {record.id && (
