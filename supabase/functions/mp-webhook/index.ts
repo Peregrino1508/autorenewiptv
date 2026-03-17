@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'Erro desconhecido';
+
 // ==== HELPER FUNCS ====
 function formatExpirationDate(expDate: any): string | null {
   if (!expDate || expDate === 'N/A') return null;
@@ -441,7 +444,7 @@ serve(async (req) => {
           .from('payments')
           .update({
             renewal_status: 'failed',
-            renewal_message: renewError.message,
+            renewal_message: getErrorMessage(renewError),
           })
           .eq('id', externalReference);
       }
@@ -451,6 +454,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Webhook error:', error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: getErrorMessage(error) }), { status: 500 });
   }
 });
