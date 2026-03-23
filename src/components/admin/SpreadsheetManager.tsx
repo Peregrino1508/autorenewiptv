@@ -467,7 +467,17 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
            }
         }}
       >
-        {isCurrentlyEditing ? (
+        {type === "date" ? (
+          <Input
+            type="date"
+            value={displayValue as string}
+            onChange={(e) => updateLocalRecord(record.id, field, e.target.value)}
+            className={`bg-transparent border-none focus:ring-0 w-full h-full text-xs ${textColor} p-0 cursor-pointer [color-scheme:dark]`}
+            onFocus={() => {
+              if (colIndex !== -1) setActiveCell({ row: rowIndex, col: colIndex });
+            }}
+          />
+        ) : isCurrentlyEditing ? (
           isText ? (
             <textarea
               autoFocus
