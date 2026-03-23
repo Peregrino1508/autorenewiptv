@@ -499,8 +499,6 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
     );
   };
 
-  if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-purple-500" /></div>;
-
   const displayRecords = sortedRecords.filter(record => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
@@ -575,6 +573,8 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeCell, isEditing, displayRecords.length]);
+
+  if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-purple-500" /></div>;
 
   const renderHeader = (label: string, initialWidth: string, sortKey?: keyof CustomerRecord) => (
     <TableHead 
