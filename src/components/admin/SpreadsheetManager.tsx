@@ -446,6 +446,26 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
     const activeClasses = isActive ? "ring-2 ring-purple-500 bg-purple-500/20 z-10" : "";
     const displayValue = record[field];
 
+    let dateInputValue = displayValue as string || "";
+    if (type === "date" && dateInputValue.includes("/")) {
+      const parts = dateInputValue.split("/");
+      if (parts.length === 3) {
+        // Assume DD/MM/YYYY -> YYYY-MM-DD
+        dateInputValue = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+    }
+
+    const handleDateChange = (val: string) => {
+      // Convert YYYY-MM-DD back to DD/MM/YYYY for expiry_month to preserve compatibility
+      if (field === "expiry_month" && val && val.includes("-")) {
+        const parts = val.split("-");
+        if (parts.length === 3) {
+          return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+      }
+      return val;
+    };
+
     return (
       <div 
         className={`${baseClasses} ${activeClasses} cursor-cell`}
@@ -470,8 +490,8 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
         {type === "date" ? (
           <Input
             type="date"
-            value={displayValue as string}
-            onChange={(e) => updateLocalRecord(record.id, field, e.target.value)}
+            value={dateInputValue}
+            onChange={(e) => updateLocalRecord(record.id, field, handleDateChange(e.target.value))}
             className={`bg-transparent border-none focus:ring-0 w-full h-full text-xs ${textColor} p-0 cursor-pointer [color-scheme:dark]`}
             onFocus={() => {
               if (colIndex !== -1) setActiveCell({ row: rowIndex, col: colIndex });
@@ -691,7 +711,7 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
                 <TableCell className="p-0">{renderCell(record, idx, "client_name")}</TableCell>
                 <TableCell className="p-0">{renderCell(record, idx, "username")}</TableCell>
                 <TableCell className="p-0">{renderCell(record, idx, "password")}</TableCell>
-                <TableCell className="p-0">{renderCell(record, idx, "expiry_month")}</TableCell>
+                <TableCell className="p-0">{renderCell(record, idx, "expiry_month", "date")}</TableCell>
                 <TableCell className="p-0">{renderCell(record, idx, "status")}</TableCell>
                 <TableCell className="p-0">{renderCell(record, idx, "next_renewal", "date")}</TableCell>
                 <TableCell className="p-0">{renderCell(record, idx, "contact_number")}</TableCell>
