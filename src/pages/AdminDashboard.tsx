@@ -62,6 +62,7 @@ const AdminDashboard = () => {
         monthlyProfit: monthlyProfit.toFixed(2),
       };
     },
+    refetchOnWindowFocus: false,
   });
 
   // Fetch panels for dynamic test buttons
@@ -90,6 +91,7 @@ const AdminDashboard = () => {
         return [];
       }
     },
+    refetchOnWindowFocus: false,
   });
 
   return (
