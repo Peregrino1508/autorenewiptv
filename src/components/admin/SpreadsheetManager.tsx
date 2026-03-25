@@ -102,6 +102,7 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
       if (error) throw error;
       return data;
     },
+    refetchOnWindowFocus: false,
   });
 
   const { data: records, isLoading } = useQuery({
@@ -115,6 +116,7 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
       if (error) throw error;
       return data as CustomerRecord[];
     },
+    refetchOnWindowFocus: false,
   });
 
   const availableMonths = useQuery({
@@ -140,7 +142,8 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
         if (yearA !== yearB) return yearA.localeCompare(yearB);
         return MONTHS.indexOf(monthA) - MONTHS.indexOf(monthB);
       });
-    }
+    },
+    refetchOnWindowFocus: false,
   });
 
   const settingsMutation = useMutation({
