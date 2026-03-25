@@ -471,18 +471,17 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
         className={`${baseClasses} ${activeClasses} cursor-cell`}
         onClick={() => {
           if (colIndex !== -1) {
-            setActiveCell({ row: rowIndex, col: colIndex });
-            if (!isCurrentlyEditing && isActive) {
-               // Optional: single click on already active cell enters edit mode? 
-               // Excel requires double click or enter, we use doubleClick below.
-            } else {
-               setIsEditing(false);
+            if (activeCell?.row !== rowIndex || activeCell?.col !== colIndex) {
+              setActiveCell({ row: rowIndex, col: colIndex });
+              setIsEditing(false);
             }
           }
         }}
         onDoubleClick={() => {
            if (colIndex !== -1) {
-             setActiveCell({ row: rowIndex, col: colIndex });
+             if (activeCell?.row !== rowIndex || activeCell?.col !== colIndex) {
+               setActiveCell({ row: rowIndex, col: colIndex });
+             }
              setIsEditing(true);
            }
         }}
@@ -494,7 +493,9 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
             onChange={(e) => updateLocalRecord(record.id, field, handleDateChange(e.target.value))}
             className={`bg-transparent border-none focus:ring-0 w-full h-full text-xs ${textColor} px-2 cursor-pointer [color-scheme:dark]`}
             onFocus={() => {
-              if (colIndex !== -1) setActiveCell({ row: rowIndex, col: colIndex });
+              if (colIndex !== -1 && (activeCell?.row !== rowIndex || activeCell?.col !== colIndex)) {
+                setActiveCell({ row: rowIndex, col: colIndex });
+              }
             }}
           />
         ) : isCurrentlyEditing ? (
