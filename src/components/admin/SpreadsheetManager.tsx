@@ -469,7 +469,11 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
     return (
       <div 
         className={`${baseClasses} ${activeClasses} cursor-cell`}
-        onClick={() => {
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.tagName.toLowerCase() === 'input' && (target as HTMLInputElement).type === 'date') {
+            return; // completely ignore to prevent react rendering during native popup usage
+          }
           if (colIndex !== -1) {
             if (activeCell?.row !== rowIndex || activeCell?.col !== colIndex) {
               setActiveCell({ row: rowIndex, col: colIndex });
@@ -492,11 +496,10 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
             value={dateInputValue}
             onChange={(e) => updateLocalRecord(record.id, field, handleDateChange(e.target.value))}
             className={`bg-transparent border-none focus:ring-0 w-full h-full text-xs ${textColor} px-2 cursor-pointer [color-scheme:dark]`}
-            onFocus={() => {
-              if (colIndex !== -1 && (activeCell?.row !== rowIndex || activeCell?.col !== colIndex)) {
-                setActiveCell({ row: rowIndex, col: colIndex });
-              }
+            onFocus={(e) => {
+              // Bypassed tracking activeCell on focus to prevent Chrome's native shadow DOM calendar from closing
             }}
+            onClick={(e) => e.stopPropagation()}
           />
         ) : isCurrentlyEditing ? (
           isText ? (
