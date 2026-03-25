@@ -492,7 +492,7 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
             type="date"
             value={dateInputValue}
             onChange={(e) => updateLocalRecord(record.id, field, handleDateChange(e.target.value))}
-            className={`bg-transparent border-none focus:ring-0 w-full h-full text-xs ${textColor} p-0 cursor-pointer [color-scheme:dark]`}
+            className={`bg-transparent border-none focus:ring-0 w-full h-full text-xs ${textColor} px-2 cursor-pointer [color-scheme:dark]`}
             onFocus={() => {
               if (colIndex !== -1) setActiveCell({ row: rowIndex, col: colIndex });
             }}
