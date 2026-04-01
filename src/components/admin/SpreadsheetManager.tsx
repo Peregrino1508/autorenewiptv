@@ -305,7 +305,7 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
       password: "",
       expiry_month: "",
       status: "Ativo",
-      next_renewal: new Date().toLocaleDateString('pt-BR'), // generates DD/MM/YYYY natively
+      next_renewal: new Date().toISOString().split("T")[0],
       contact_number: "",
       value: 0,
       expense: 0,
@@ -356,8 +356,7 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
           
           if (parsedDate && !isNaN(parsedDate.getTime())) {
             parsedDate.setMonth(parsedDate.getMonth() + 1);
-            // Convert back to DD/MM/YYYY natively
-            newNextRenewal = parsedDate.toLocaleDateString('pt-BR');
+            newNextRenewal = parsedDate.toISOString().split('T')[0];
           }
         } catch (e) {
           console.error("Error incrementing date:", e);
@@ -468,8 +467,8 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
     }
 
     const handleDateChange = (val: string) => {
-      // Convert YYYY-MM-DD back to DD/MM/YYYY for both expiry_month and next_renewal to preserve identical standard behavior as requested
-      if ((field === "expiry_month" || field === "next_renewal") && val && val.includes("-")) {
+      // Convert YYYY-MM-DD back to DD/MM/YYYY for expiry_month to preserve compatibility
+      if (field === "expiry_month" && val && val.includes("-")) {
         const parts = val.split("-");
         if (parts.length === 3) {
           return `${parts[2]}/${parts[1]}/${parts[0]}`;
