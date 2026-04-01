@@ -359,8 +359,8 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
 
     if (confirm(`Deseja gerar a planilha de ${nextMonthName}? Os valores serão zerados e as datas de renovação serão atualizadas.`)) {
       const newRecords = localRecords.map(({ id, created_at, profit, value, expense, status, expiry_month, next_renewal, ...rest }) => {
-        // Erase next_renewal as requested ("venha toda limpa") 
-        let cleanNextRenewal = "";
+        // Erase next_renewal as requested, must be strictly null for Postgres DATE type syntax
+        let cleanNextRenewal = null;
         
         // Must also safely preserve expiry_month in case the row originated with YYYY-MM-DD
         return {
