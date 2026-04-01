@@ -114,7 +114,17 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
         .eq("sheet_month", selectedMonth);
 
       if (error) throw error;
-      return data as CustomerRecord[];
+      
+      // Convert next_renewal from DB YYYY-MM-DD to frontend DD/MM/YYYY to perfectly match expiry_month behavior
+      return (data as CustomerRecord[]).map(record => {
+        if (record.next_renewal && record.next_renewal.includes("-")) {
+          const parts = record.next_renewal.split("-");
+          if (parts.length === 3) {
+            record.next_renewal = `${parts[2]}/${parts[1]}/${parts[0]}`;
+          }
+        }
+        return record;
+      });
     },
     refetchOnWindowFocus: false,
   });
@@ -221,9 +231,18 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
     try {
       setIsSaving(true);
       
-      // Save records (sequentially for now to maintain logic, but with error handling)
+      // Save records
       const recordsToSave = localRecords.map(r => {
         const { profit, ...data } = r;
+        
+        // Convert next_renewal back to YYYY-MM-DD for PostgreSQL DATE column compatibility
+        if (data.next_renewal && data.next_renewal.includes("/")) {
+          const parts = data.next_renewal.split("/");
+          if (parts.length === 3) {
+            data.next_renewal = `${parts[2]}-${parts[1]}-${parts[0]}`;
+          }
+        }
+        
         return data;
       });
 
@@ -305,7 +324,7 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
       password: "",
       expiry_month: "",
       status: "Ativo",
-      next_renewal: new Date().toISOString().split("T")[0],
+      next_renewal: new Date().toLocaleDateString('pt-BR'), // DD/MM/YYYY initially
       contact_number: "",
       value: 0,
       expense: 0,
@@ -345,7 +364,7 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
         // Increment month logic
         let newNextRenewal = next_renewal;
         try {
-          // Try to safely parse whether it's DD/MM/YYYY or YYYY-MM-DD
+          // Parse DD/MM/YYYY to jump a month natively, then output DD/MM/YYYY back to state
           let parsedDate = null;
           if (next_renewal.includes("/")) {
             const parts = next_renewal.split("/");
@@ -353,23 +372,30 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
           } else {
             parsedDate = new Date(next_renewal + "T12:00:00");
           }
-          
           if (parsedDate && !isNaN(parsedDate.getTime())) {
             parsedDate.setMonth(parsedDate.getMonth() + 1);
-            newNextRenewal = parsedDate.toISOString().split('T')[0];
+            newNextRenewal = parsedDate.toLocaleDateString('pt-BR');
           }
         } catch (e) {
           console.error("Error incrementing date:", e);
         }
 
+        // Must convert next_renewal to YYYY-MM-DD just for the DB insert array
+        let dbNextRenewal = newNextRenewal;
+        if (dbNextRenewal.includes("/")) {
+           const p = dbNextRenewal.split("/");
+           if (p.length === 3) dbNextRenewal = `${p[2]}-${p[1]}-${p[0]}`;
+        }
+        
+        // Must also safely preserve expiry_month in case the row originated with YYYY-MM-DD
         return {
           ...rest,
           value: 0,
           expense: 0,
           profit: 0,
           status: "",
-          expiry_month: next_renewal, // Old renewal becomes expiry month
-          next_renewal: newNextRenewal, // New renewal is next month
+          expiry_month: next_renewal, // receives previous string
+          next_renewal: dbNextRenewal, // DB formatted
           sheet_month: nextMonthName,
         };
       });
@@ -467,8 +493,8 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
     }
 
     const handleDateChange = (val: string) => {
-      // Convert YYYY-MM-DD back to DD/MM/YYYY for expiry_month to preserve compatibility
-      if (field === "expiry_month" && val && val.includes("-")) {
+      // Convert YYYY-MM-DD back to DD/MM/YYYY for both expiry_month and next_renewal exactly as requested
+      if ((field === "expiry_month" || field === "next_renewal") && val && val.includes("-")) {
         const parts = val.split("-");
         if (parts.length === 3) {
           return `${parts[2]}/${parts[1]}/${parts[0]}`;
