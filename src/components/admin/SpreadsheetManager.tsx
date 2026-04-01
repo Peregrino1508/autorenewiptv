@@ -584,6 +584,15 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!activeCell) return;
 
+      // Abort if the user is focused on an external input (e.g., the global search bar)
+      const activeEl = document.activeElement as HTMLElement | null;
+      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) {
+        // Only allow if it's our own cell input
+        if (!activeEl.closest('.cursor-cell')) {
+          return;
+        }
+      }
+
       // If we are currently editing a cell, let the input handle most keys
       if (isEditing) {
         if (e.key === "Escape") {
