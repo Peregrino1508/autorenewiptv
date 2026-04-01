@@ -139,13 +139,8 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
       
       if (error) throw error;
       const uniqueMonths = Array.from(new Set((data as any[]).map(item => item.sheet_month)));
-      // Garante que o mês atual esteja na lista se ainda não houver registros
-      const currentMonth = `${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()}`;
-      if (!uniqueMonths.includes(currentMonth)) {
-        uniqueMonths.push(currentMonth);
-      }
-
-      // Ordenação cronológica: por ano e depois pelo índice do mês
+      
+      // We no longer force the current month here so that deleted months stay visually gone
       return uniqueMonths.sort((a, b) => {
         const [monthA, yearA] = a.split(" ");
         const [monthB, yearB] = b.split(" ");
@@ -235,8 +230,11 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
       const recordsToSave = localRecords.map(r => {
         const { profit, ...data } = r;
         
-        // Convert next_renewal back to YYYY-MM-DD for PostgreSQL DATE column compatibility
-        if (data.next_renewal && data.next_renewal.includes("/")) {
+        // Nullify empty dates strictly to avoid Postgres DATE syntax crashes "invalid input syntax for type date: """
+        if (!data.next_renewal || data.next_renewal === "") {
+           // Provide a real SQL null
+           (data as any).next_renewal = null;
+        } else if (data.next_renewal && data.next_renewal.includes("/")) {
           const parts = data.next_renewal.split("/");
           if (parts.length === 3) {
             data.next_renewal = `${parts[2]}-${parts[1]}-${parts[0]}`;
@@ -361,31 +359,8 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
 
     if (confirm(`Deseja gerar a planilha de ${nextMonthName}? Os valores serão zerados e as datas de renovação serão atualizadas.`)) {
       const newRecords = localRecords.map(({ id, created_at, profit, value, expense, status, expiry_month, next_renewal, ...rest }) => {
-        // Increment month logic
-        let newNextRenewal = next_renewal;
-        try {
-          // Parse DD/MM/YYYY to jump a month natively, then output DD/MM/YYYY back to state
-          let parsedDate = null;
-          if (next_renewal.includes("/")) {
-            const parts = next_renewal.split("/");
-            if (parts.length === 3) parsedDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00`);
-          } else {
-            parsedDate = new Date(next_renewal + "T12:00:00");
-          }
-          if (parsedDate && !isNaN(parsedDate.getTime())) {
-            parsedDate.setMonth(parsedDate.getMonth() + 1);
-            newNextRenewal = parsedDate.toLocaleDateString('pt-BR');
-          }
-        } catch (e) {
-          console.error("Error incrementing date:", e);
-        }
-
-        // Must convert next_renewal to YYYY-MM-DD just for the DB insert array
-        let dbNextRenewal = newNextRenewal;
-        if (dbNextRenewal.includes("/")) {
-           const p = dbNextRenewal.split("/");
-           if (p.length === 3) dbNextRenewal = `${p[2]}-${p[1]}-${p[0]}`;
-        }
+        // Erase next_renewal as requested ("venha toda limpa") 
+        let cleanNextRenewal = "";
         
         // Must also safely preserve expiry_month in case the row originated with YYYY-MM-DD
         return {
@@ -393,8 +368,8 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
           value: 0,
           expense: 0,
           status: "",
-          expiry_month: next_renewal, // receives previous string
-          next_renewal: dbNextRenewal, // DB formatted
+          expiry_month: next_renewal, // receives previous original string
+          next_renewal: cleanNextRenewal, // entirely cleared
           sheet_month: nextMonthName,
         };
       });
@@ -427,12 +402,20 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
 
       toast({ title: "Sucesso", description: `Planilha de ${selectedMonth} excluída.` });
       
-      // Try to fallback to current month or first available
-      const currentMonth = `${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()}`;
-      setSelectedMonth(currentMonth);
+      // Fallback intelligently to the next highest available month if present, or clear completely
+      queryClient.invalidateQueries({ queryKey: ["available-months"] }).then(() => {
+        const cachedMonths = queryClient.getQueryData<string[]>(["available-months"]);
+        const remaining = (cachedMonths || []).filter(m => m !== selectedMonth);
+        if (remaining.length > 0) {
+           setSelectedMonth(remaining[remaining.length - 1]); // Set to whatever is last/latest
+        } else {
+           // Completely empty system state
+           const defaultMonth = `${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()}`;
+           setSelectedMonth(defaultMonth); 
+        }
+      });
       
       queryClient.invalidateQueries({ queryKey: ["customer-records"] });
-      queryClient.invalidateQueries({ queryKey: ["available-months"] });
     } catch (error: any) {
       toast({ title: "Erro", description: "Falha ao excluir mês: " + error.message, variant: "destructive" });
     }
