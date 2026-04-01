@@ -392,7 +392,6 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
           ...rest,
           value: 0,
           expense: 0,
-          profit: 0,
           status: "",
           expiry_month: next_renewal, // receives previous string
           next_renewal: dbNextRenewal, // DB formatted
