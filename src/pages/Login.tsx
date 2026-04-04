@@ -71,7 +71,7 @@ const Login = () => {
               R6TV
             </CardTitle>
           </div>
-          <p className="text-slate-700 text-lg">Portal Administrativo R6TV</p>
+          <p className="text-slate-700 text-lg">Painel Administrativo R6TV</p>
         </CardHeader>
         
         <CardContent className="space-y-8 px-12 pb-12">
