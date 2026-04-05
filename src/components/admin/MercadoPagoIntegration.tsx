@@ -97,22 +97,28 @@ export function MercadoPagoIntegration() {
           </CardHeader>
           <CardContent className="space-y-4">
             {hasPublicKey && (
-              <div className="flex items-center gap-2 p-3 bg-slate-900/80 rounded-lg border border-slate-700/50">
-                <p className="text-xs text-slate-400 font-mono truncate flex-1">
-                  {currentSettings?.find((s) => s.key === "mp_public_key")?.value?.slice(0, 20)}...
-                </p>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-slate-400 hover:text-white"
-                  onClick={() => {
-                    const val = currentSettings?.find((s) => s.key === "mp_public_key")?.value;
-                    if (val) navigator.clipboard.writeText(val);
-                    toast({ title: "Copiado!" });
-                  }}
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
+              <div className="space-y-2">
+                <Label className="text-emerald-400 text-xs font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Chave Configurada
+                </Label>
+                <div className="flex items-center gap-2 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
+                  <p className="text-sm text-emerald-300 font-mono truncate flex-1">
+                    {currentSettings?.find((s) => s.key === "mp_public_key")?.value}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-emerald-400 hover:text-white shrink-0"
+                    onClick={() => {
+                      const val = currentSettings?.find((s) => s.key === "mp_public_key")?.value;
+                      if (val) navigator.clipboard.writeText(val);
+                      toast({ title: "Copiado!" });
+                    }}
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
             )}
             <div>
