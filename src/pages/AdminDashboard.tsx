@@ -16,7 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart, DollarSign, FileText, Menu, FileSpreadsheet, Search, Landmark } from "lucide-react";
+import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart, DollarSign, FileText, Menu, FileSpreadsheet, Search, Landmark, UserPlus } from "lucide-react";
 import { MercadoPagoIntegration } from "@/components/admin/MercadoPagoIntegration";
 import { Input } from "@/components/ui/input";
 import {
