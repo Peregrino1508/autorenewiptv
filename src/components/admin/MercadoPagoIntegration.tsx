@@ -44,7 +44,6 @@ export function MercadoPagoIntegration() {
       queryClient.invalidateQueries({ queryKey: ["mp-settings"] });
       queryClient.invalidateQueries({ queryKey: ["system-settings"] });
       setPublicKey("");
-      setAccessToken("");
       toast({
         title: "Sucesso! ✅",
         description: "Chave pública do Mercado Pago salva com sucesso.",
