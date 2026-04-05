@@ -287,7 +287,7 @@ export function AdminRegistration() {
                         </span>
                       )}
                     </div>
-                    <div className="space-y-1 text-sm text-slate-400">
+                    <div className="space-y-1 text-sm text-white">
                       <div className="flex items-center gap-2">
                         <Mail className="w-3.5 h-3.5" />
                         <span>{admin.email}</span>
@@ -301,7 +301,7 @@ export function AdminRegistration() {
                         <span>{admin.city} - {admin.state}</span>
                       </div>
                     </div>
-                    <p className="text-xs text-slate-600">
+                    <p className="text-xs text-white/70">
                       Cadastrado em: {new Date(admin.created_at).toLocaleDateString("pt-BR")}
                     </p>
                   </div>
