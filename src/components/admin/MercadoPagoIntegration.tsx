@@ -16,6 +16,8 @@ export function MercadoPagoIntegration() {
   const [webhookSecret, setWebhookSecret] = useState("");
   const [showAccessToken, setShowAccessToken] = useState(false);
   const [showWebhookSecret, setShowWebhookSecret] = useState(false);
+  const [showInputAccessToken, setShowInputAccessToken] = useState(false);
+  const [showInputWebhookSecret, setShowInputWebhookSecret] = useState(false);
 
   // Fetch current admin's MP credentials
   const { data: credentials, isLoading } = useQuery({
