@@ -422,6 +422,14 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Validate webhook signature if secrets are configured
+    try {
+      await validateWebhookSignature(req, supabase, id);
+    } catch (sigError) {
+      console.error('[mp-webhook] Rejecting webhook due to invalid signature');
+      return new Response("Forbidden", { status: 403 });
+    }
+
     // First, try to find the payment record by mp_payment_id to get admin_id
     // We need the access token to verify with MP, but we also need to know which admin
     // Try global token first to fetch payment info from MP, then resolve per-admin for verification
