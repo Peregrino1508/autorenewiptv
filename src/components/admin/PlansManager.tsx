@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import type { Tables } from "@/integrations/supabase/types";
 type Plan = Tables<"plans">;
 
 export function PlansManager() {
+  const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const queryClient = useQueryClient();
@@ -50,7 +52,7 @@ export function PlansManager() {
       } else {
         const { error } = await supabase
           .from("plans")
-          .insert([plan]);
+          .insert([{ ...plan, created_by: user?.id }]);
         if (error) throw error;
       }
     },

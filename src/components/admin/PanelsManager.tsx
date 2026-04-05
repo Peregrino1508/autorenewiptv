@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import type { Tables } from "@/integrations/supabase/types";
 type Panel = Tables<"iptv_panels">;
 
 export function PanelsManager() {
+  const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPanel, setEditingPanel] = useState<Panel | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -69,7 +71,7 @@ export function PanelsManager() {
       } else {
         const { error } = await supabase
           .from("iptv_panels")
-          .insert([saveData as any]);
+          .insert([{ ...saveData, created_by: user?.id } as any]);
         if (error) throw error;
       }
     },
