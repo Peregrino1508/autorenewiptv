@@ -6,14 +6,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { ExternalLink, Key, ShieldCheck, AlertTriangle, CheckCircle2, Copy, Eye, EyeOff, Webhook } from "lucide-react";
+import { ExternalLink, Key, ShieldCheck, AlertTriangle, CheckCircle2, Copy, Eye, EyeOff, Webhook, Lock } from "lucide-react";
 
 export function MercadoPagoIntegration() {
   const queryClient = useQueryClient();
   
   const [publicKey, setPublicKey] = useState("");
   const [accessToken, setAccessToken] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
   const [showAccessToken, setShowAccessToken] = useState(false);
+  const [showWebhookSecret, setShowWebhookSecret] = useState(false);
 
   // Fetch current admin's MP credentials
   const { data: credentials, isLoading } = useQuery({
@@ -47,6 +49,7 @@ export function MercadoPagoIntegration() {
       const updates: Record<string, any> = {};
       if (publicKey.trim()) updates.mp_public_key = publicKey.trim();
       if (accessToken.trim()) updates.mp_access_token = accessToken.trim();
+      if (webhookSecret.trim()) updates.mp_webhook_secret = webhookSecret.trim();
 
       if (Object.keys(updates).length === 0) {
         throw new Error("Preencha pelo menos um campo");
@@ -71,6 +74,7 @@ export function MercadoPagoIntegration() {
       queryClient.invalidateQueries({ queryKey: ["admin-mp-credentials"] });
       setPublicKey("");
       setAccessToken("");
+      setWebhookSecret("");
       toast({
         title: "Sucesso! ✅",
         description: "Credenciais do Mercado Pago salvas com sucesso.",
