@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Server } from "lucide-react";
+import { Plus, Edit, Trash2, Server, Eye, EyeOff } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Panel = Tables<"iptv_panels">;
@@ -17,6 +17,7 @@ type Panel = Tables<"iptv_panels">;
 export function PanelsManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPanel, setEditingPanel] = useState<Panel | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
@@ -242,14 +243,25 @@ export function PanelsManager() {
               
               <div>
                 <Label htmlFor="admin_password">Senha Admin</Label>
-                <Input
-                  id="admin_password"
-                  type="password"
-                  value={formData.admin_password}
-                  onChange={(e) => setFormData({ ...formData, admin_password: e.target.value })}
-                  className="bg-white/10 border-white/20 text-white"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="admin_password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.admin_password}
+                    onChange={(e) => setFormData({ ...formData, admin_password: e.target.value })}
+                    className="bg-white/10 border-white/20 text-white pr-10"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-400 hover:text-white"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
                 <p className="text-xs text-slate-400 mt-1">
                   Mesma senha que você usa para logar no painel
                 </p>
