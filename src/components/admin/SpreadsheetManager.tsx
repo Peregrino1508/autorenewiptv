@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Table,
   TableBody,
@@ -62,6 +63,7 @@ interface SpreadsheetManagerProps {
 }
 
 export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedMonth, setSelectedMonth] = useState(`${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()}`);
   const [sortConfig, setSortConfig] = useState<{ key: keyof CustomerRecord; direction: 'asc' | 'desc' } | null>(null);
@@ -247,7 +249,7 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
       for (const data of recordsToSave) {
         if (data.id.startsWith('temp-')) {
           const { id, ...insertData } = data;
-          const { error } = await (supabase as any).from("customer_records").insert([insertData]);
+          const { error } = await (supabase as any).from("customer_records").insert([{ ...insertData, created_by: user?.id }]);
           if (error) throw error;
         } else {
           const { error } = await (supabase as any)
@@ -374,7 +376,8 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
         };
       });
 
-      const { error } = await (supabase as any).from("customer_records").insert(newRecords);
+      const recordsWithOwner = newRecords.map((r: any) => ({ ...r, created_by: user?.id }));
+      const { error } = await (supabase as any).from("customer_records").insert(recordsWithOwner);
 
       if (error) {
         toast({ title: "Erro", description: "Falha ao criar nova planilha: " + error.message, variant: "destructive" });
