@@ -10,7 +10,7 @@ import { ExternalLink, Key, ShieldCheck, AlertTriangle, CheckCircle2, Copy } fro
 
 export function MercadoPagoIntegration() {
   const queryClient = useQueryClient();
-  const [accessToken, setAccessToken] = useState("");
+  
   const [publicKey, setPublicKey] = useState("");
 
   const { data: currentSettings, isLoading } = useQuery({
