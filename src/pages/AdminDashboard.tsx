@@ -16,7 +16,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart, DollarSign, FileText, Menu, FileSpreadsheet, Search } from "lucide-react";
+import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart, DollarSign, FileText, Menu, FileSpreadsheet, Search, Landmark } from "lucide-react";
+import { MercadoPagoIntegration } from "@/components/admin/MercadoPagoIntegration";
 import { Input } from "@/components/ui/input";
 import {
   Sheet,
@@ -316,6 +317,13 @@ const AdminDashboard = () => {
                   <FileSpreadsheet className="w-4 h-4 mr-2" />
                   Cadastro
                 </TabsTrigger>
+                <TabsTrigger 
+                  value="mercadopago" 
+                  className="flex-1 min-w-[120px] md:min-w-[140px] data-[state=active]:bg-sky-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm"
+                >
+                  <Landmark className="w-4 h-4 mr-2" />
+                  Mercado Pago
+                </TabsTrigger>
               </TabsList>
 
           <TabsContent value="panels" className="mt-6">
@@ -344,6 +352,10 @@ const AdminDashboard = () => {
 
               <TabsContent value="spreadsheet" className="mt-6">
                 <SpreadsheetManager searchTerm={searchTerm} />
+              </TabsContent>
+
+              <TabsContent value="mercadopago" className="mt-6">
+                <MercadoPagoIntegration />
               </TabsContent>
             </Tabs>
           </CardContent>
