@@ -35,11 +35,12 @@ export function PanelsManager() {
 
   // Fetch panels
   const { data: panels, isLoading } = useQuery({
-    queryKey: ["iptv-panels"],
+    queryKey: ["iptv-panels", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("iptv_panels")
         .select("*")
+        .eq("created_by", user?.id!)
         .order("created_at", { ascending: false });
       
       if (error) throw error;

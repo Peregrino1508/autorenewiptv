@@ -29,11 +29,12 @@ export function PlansManager() {
   });
 
   const { data: plans, isLoading } = useQuery({
-    queryKey: ["iptv-plans"],
+    queryKey: ["iptv-plans", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("plans")
         .select("*")
+        .eq("created_by", user?.id!)
         .order("price", { ascending: true });
       
       if (error) throw error;

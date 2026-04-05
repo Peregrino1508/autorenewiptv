@@ -35,11 +35,12 @@ export function IptvUsersManager({ searchTerm = "" }: IptvUsersManagerProps) {
   });
 
   const { data: users, isLoading } = useQuery({
-    queryKey: ["iptv-users"],
+    queryKey: ["iptv-users", currentUser?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("iptv_users")
         .select("*")
+        .eq("created_by", currentUser?.id!)
         .order("created_at", { ascending: false });
       
       if (error) throw error;
@@ -48,12 +49,13 @@ export function IptvUsersManager({ searchTerm = "" }: IptvUsersManagerProps) {
   });
 
   const { data: plans } = useQuery({
-    queryKey: ["iptv-plans"],
+    queryKey: ["iptv-plans", currentUser?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("plans")
         .select("*")
         .eq("is_active", true)
+        .eq("created_by", currentUser?.id!)
         .order("price", { ascending: true });
       if (error) throw error;
       return data;
@@ -61,12 +63,13 @@ export function IptvUsersManager({ searchTerm = "" }: IptvUsersManagerProps) {
   });
 
   const { data: panels } = useQuery({
-    queryKey: ["iptv-panels"],
+    queryKey: ["iptv-panels", currentUser?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("iptv_panels")
         .select("*")
         .eq("is_active", true)
+        .eq("created_by", currentUser?.id!)
         .order("name", { ascending: true });
       if (error) throw error;
       return data;
