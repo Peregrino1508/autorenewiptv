@@ -332,9 +332,6 @@ const AdminDashboard = () => {
                   <UserPlus className="w-4 h-4 mr-2" />
                   Cad. Admin
                 </TabsTrigger>
-                  <Landmark className="w-4 h-4 mr-2" />
-                  Mercado Pago
-                </TabsTrigger>
               </TabsList>
 
           <TabsContent value="panels" className="mt-6">
@@ -367,6 +364,10 @@ const AdminDashboard = () => {
 
               <TabsContent value="mercadopago" className="mt-6">
                 <MercadoPagoIntegration />
+              </TabsContent>
+
+              <TabsContent value="admin-registration" className="mt-6">
+                <AdminRegistration />
               </TabsContent>
             </Tabs>
           </CardContent>
