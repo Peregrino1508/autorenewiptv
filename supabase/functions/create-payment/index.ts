@@ -65,12 +65,14 @@ serve(async (req) => {
       }
 
       if (!planData) {
-        const { data: activePlan } = await supabase
+        const query = supabase
           .from('plans')
           .select('*')
-          .eq('is_active', true)
-          .limit(1)
-          .single();
+          .eq('is_active', true);
+        
+        if (adminId) query.eq('created_by', adminId);
+        
+        const { data: activePlan } = await query.limit(1).single();
         planData = activePlan;
       }
 
@@ -88,12 +90,14 @@ serve(async (req) => {
         if (panelErr || !panel) throw new Error('Painel vinculado ao usuário não encontrado');
         panelData = panel;
       } else {
-        const { data: fallbackPanel, error: panelErr2 } = await supabase
+        const query = supabase
           .from('iptv_panels')
           .select('*')
-          .eq('is_active', true)
-          .limit(1)
-          .single();
+          .eq('is_active', true);
+        
+        if (adminId) query.eq('created_by', adminId);
+        
+        const { data: fallbackPanel, error: panelErr2 } = await query.limit(1).single();
         if (panelErr2) throw new Error('Nenhum painel ativo encontrado');
         panelData = fallbackPanel;
       }
@@ -116,13 +120,22 @@ serve(async (req) => {
       planData = plan;
       amount = Number(plan.price);
       paymentDescription = `Renovação IPTV - ${plan.name} - Usuário: ${iptv_username}`;
+      
+      // Derive adminId from the plan's creator
+      adminId = plan.created_by || null;
 
       if (panel_id) {
         const { data, error } = await supabase.from('iptv_panels').select('*').eq('id', panel_id).single();
         if (error) throw new Error('Painel não encontrado');
         panelData = data;
+      } else if (planData.panel_id) {
+        const { data, error } = await supabase.from('iptv_panels').select('*').eq('id', planData.panel_id).single();
+        if (error) throw new Error('Painel vinculado ao plano não encontrado');
+        panelData = data;
       } else {
-        const { data, error } = await supabase.from('iptv_panels').select('*').eq('is_active', true).limit(1).single();
+        const query = supabase.from('iptv_panels').select('*').eq('is_active', true);
+        if (adminId) query.eq('created_by', adminId);
+        const { data, error } = await query.limit(1).single();
         if (error) throw new Error('Nenhum painel ativo encontrado');
         panelData = data;
       }
