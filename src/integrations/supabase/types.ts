@@ -47,6 +47,48 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_profiles: {
+        Row: {
+          city: string
+          created_at: string
+          created_by: string | null
+          email: string
+          full_name: string
+          id: string
+          is_super_admin: boolean
+          phone: string
+          state: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          created_by?: string | null
+          email: string
+          full_name: string
+          id?: string
+          is_super_admin?: boolean
+          phone: string
+          state: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          is_super_admin?: boolean
+          phone?: string
+          state?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customer_records: {
         Row: {
           client_name: string | null
