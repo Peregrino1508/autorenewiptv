@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_mp_credentials: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          mp_access_token: string | null
+          mp_public_key: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          mp_access_token?: string | null
+          mp_public_key?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          mp_access_token?: string | null
+          mp_public_key?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       customer_records: {
         Row: {
           client_name: string | null
@@ -226,6 +256,7 @@ export type Database = {
       }
       payments: {
         Row: {
+          admin_id: string | null
           amount: number
           created_at: string
           customer_email: string | null
@@ -243,6 +274,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_id?: string | null
           amount: number
           created_at?: string
           customer_email?: string | null
@@ -260,6 +292,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_id?: string | null
           amount?: number
           created_at?: string
           customer_email?: string | null
