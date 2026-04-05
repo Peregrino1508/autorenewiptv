@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,47 +6,74 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { ExternalLink, Key, ShieldCheck, AlertTriangle, CheckCircle2, Copy } from "lucide-react";
+import { ExternalLink, Key, ShieldCheck, AlertTriangle, CheckCircle2, Copy, Eye, EyeOff, Webhook } from "lucide-react";
 
 export function MercadoPagoIntegration() {
   const queryClient = useQueryClient();
   
   const [publicKey, setPublicKey] = useState("");
+  const [accessToken, setAccessToken] = useState("");
+  const [showAccessToken, setShowAccessToken] = useState(false);
 
-  const { data: currentSettings, isLoading } = useQuery({
-    queryKey: ["mp-settings"],
+  // Fetch current admin's MP credentials
+  const { data: credentials, isLoading } = useQuery({
+    queryKey: ["admin-mp-credentials"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
       const { data, error } = await supabase
-        .from("settings")
+        .from("admin_mp_credentials")
         .select("*")
-        .in("key", ["mp_public_key", "mp_access_token"]);
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
       if (error) throw error;
       return data;
     },
   });
 
-  const hasPublicKey = currentSettings?.some(
-    (s) => s.key === "mp_public_key" && s.value && s.value.length > 5
-  );
+  const hasPublicKey = !!credentials?.mp_public_key;
+  const hasAccessToken = !!credentials?.mp_access_token;
+  const isFullyConfigured = hasPublicKey && hasAccessToken;
 
-  const saveKeys = useMutation({
+  const webhookUrl = "https://snoiymaflwumwlbschau.supabase.co/functions/v1/mp-webhook";
+
+  const saveCredentials = useMutation({
     mutationFn: async () => {
-      if (publicKey.trim()) {
-        const existing = currentSettings?.find((s) => s.key === "mp_public_key");
-        if (existing) {
-          await supabase.from("settings").update({ value: publicKey.trim() } as any).eq("key", "mp_public_key");
-        } else {
-          await supabase.from("settings").insert([{ key: "mp_public_key", value: publicKey.trim() }]);
-        }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const updates: Record<string, any> = {};
+      if (publicKey.trim()) updates.mp_public_key = publicKey.trim();
+      if (accessToken.trim()) updates.mp_access_token = accessToken.trim();
+
+      if (Object.keys(updates).length === 0) {
+        throw new Error("Preencha pelo menos um campo");
+      }
+
+      if (credentials) {
+        // Update existing
+        const { error } = await supabase
+          .from("admin_mp_credentials")
+          .update({ ...updates, updated_at: new Date().toISOString() } as any)
+          .eq("user_id", user.id);
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { error } = await supabase
+          .from("admin_mp_credentials")
+          .insert([{ user_id: user.id, ...updates }] as any);
+        if (error) throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mp-settings"] });
-      queryClient.invalidateQueries({ queryKey: ["system-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-mp-credentials"] });
       setPublicKey("");
+      setAccessToken("");
       toast({
         title: "Sucesso! ✅",
-        description: "Chave pública do Mercado Pago salva com sucesso.",
+        description: "Credenciais do Mercado Pago salvas com sucesso.",
       });
     },
     onError: (error) => {
@@ -63,20 +90,25 @@ export function MercadoPagoIntegration() {
   return (
     <div className="space-y-6">
       {/* Status Banner */}
-      <Card className={`border ${hasPublicKey ? "bg-emerald-500/10 border-emerald-500/30" : "bg-amber-500/10 border-amber-500/30"} backdrop-blur-sm`}>
+      <Card className={`border ${isFullyConfigured ? "bg-emerald-500/10 border-emerald-500/30" : "bg-amber-500/10 border-amber-500/30"} backdrop-blur-sm`}>
         <CardContent className="p-4 flex items-center gap-3">
-          {hasPublicKey ? (
+          {isFullyConfigured ? (
             <>
               <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
               <p className="text-emerald-300 text-sm font-medium">
-                Mercado Pago integrado — Public Key configurada.
+                Mercado Pago totalmente configurado — Public Key e Access Token salvos.
               </p>
             </>
           ) : (
             <>
               <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
               <p className="text-amber-300 text-sm font-medium">
-                Mercado Pago não configurado. Adicione suas credenciais abaixo.
+                {!hasPublicKey && !hasAccessToken
+                  ? "Mercado Pago não configurado. Adicione suas credenciais abaixo."
+                  : !hasAccessToken
+                    ? "Falta configurar o Access Token para completar a integração."
+                    : "Falta configurar a Public Key para completar a integração."
+                }
               </p>
             </>
           )}
@@ -84,7 +116,7 @@ export function MercadoPagoIntegration() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Public Key Config */}
+        {/* Public Key */}
         <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-white flex items-center">
@@ -104,15 +136,14 @@ export function MercadoPagoIntegration() {
                 </Label>
                 <div className="flex items-center gap-2 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
                   <p className="text-sm text-emerald-300 font-mono truncate flex-1">
-                    {currentSettings?.find((s) => s.key === "mp_public_key")?.value}
+                    {credentials?.mp_public_key}
                   </p>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 text-emerald-400 hover:text-white shrink-0"
                     onClick={() => {
-                      const val = currentSettings?.find((s) => s.key === "mp_public_key")?.value;
-                      if (val) navigator.clipboard.writeText(val);
+                      if (credentials?.mp_public_key) navigator.clipboard.writeText(credentials.mp_public_key);
                       toast({ title: "Copiado!" });
                     }}
                   >
@@ -133,18 +164,10 @@ export function MercadoPagoIntegration() {
                 placeholder="APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
               />
             </div>
-            <Button
-              onClick={() => saveKeys.mutate()}
-              disabled={!publicKey.trim() || saveKeys.isPending}
-              className="w-full bg-sky-600 hover:bg-sky-700 text-white"
-            >
-              <ShieldCheck className="w-4 h-4 mr-2" />
-              {saveKeys.isPending ? "Salvando..." : "Salvar Public Key"}
-            </Button>
           </CardContent>
         </Card>
 
-        {/* Access Token Info */}
+        {/* Access Token */}
         <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-white flex items-center">
@@ -152,24 +175,96 @@ export function MercadoPagoIntegration() {
               Access Token (Backend)
             </CardTitle>
             <CardDescription className="text-slate-400">
-              O Access Token é configurado como Secret nas Edge Functions do Supabase para segurança.
+              Token secreto usado pelo servidor para criar pagamentos e verificar status.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg space-y-2">
-              <p className="text-amber-300 text-sm font-medium">⚠️ Configuração via Supabase</p>
-              <p className="text-slate-400 text-xs leading-relaxed">
-                O Access Token deve ser adicionado como <strong className="text-white">MERCADOPAGO_ACCESS_TOKEN</strong> nos Secrets das Edge Functions no painel do Supabase, nunca no frontend.
-              </p>
-            </div>
-            <div className="text-xs text-slate-500 space-y-1">
-              <p>1. Acesse o painel do Supabase → Edge Functions → Secrets</p>
-              <p>2. Adicione: <code className="text-sky-400">MERCADOPAGO_ACCESS_TOKEN</code></p>
-              <p>3. Cole o token obtido no painel de Desenvolvedores do Mercado Pago</p>
+            {hasAccessToken && (
+              <div className="space-y-2">
+                <Label className="text-emerald-400 text-xs font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Token Configurado
+                </Label>
+                <div className="flex items-center gap-2 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
+                  <p className="text-sm text-emerald-300 font-mono truncate flex-1">
+                    {showAccessToken
+                      ? credentials?.mp_access_token
+                      : "••••••••••••••••••••••••••••••••"
+                    }
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-emerald-400 hover:text-white shrink-0"
+                    onClick={() => setShowAccessToken(!showAccessToken)}
+                  >
+                    {showAccessToken ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  </Button>
+                </div>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="mp_token" className="text-slate-300">
+                {hasAccessToken ? "Atualizar Access Token" : "Access Token"}
+              </Label>
+              <Input
+                id="mp_token"
+                type="password"
+                value={accessToken}
+                onChange={(e) => setAccessToken(e.target.value)}
+                className="bg-slate-900 border-slate-700 text-white mt-1 font-mono text-xs"
+                placeholder="APP_USR-0000000000000000-000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-000000000"
+              />
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Save Button */}
+      <Button
+        onClick={() => saveCredentials.mutate()}
+        disabled={(!publicKey.trim() && !accessToken.trim()) || saveCredentials.isPending}
+        className="w-full bg-sky-600 hover:bg-sky-700 text-white h-12 text-base"
+      >
+        <ShieldCheck className="w-5 h-5 mr-2" />
+        {saveCredentials.isPending ? "Salvando..." : "Salvar Credenciais"}
+      </Button>
+
+      {/* Webhook URL */}
+      <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center text-base">
+            <Webhook className="w-5 h-5 mr-2 text-purple-400" />
+            Webhook URL (Notificações)
+          </CardTitle>
+          <CardDescription className="text-slate-400">
+            Configure esta URL no painel do Mercado Pago para receber notificações de pagamento.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-2 p-3 bg-purple-500/10 rounded-lg border border-purple-500/30">
+            <p className="text-sm text-purple-300 font-mono truncate flex-1">
+              {webhookUrl}
+            </p>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-purple-400 hover:text-white shrink-0"
+              onClick={() => {
+                navigator.clipboard.writeText(webhookUrl);
+                toast({ title: "URL copiada!" });
+              }}
+            >
+              <Copy className="w-3 h-3" />
+            </Button>
+          </div>
+          <div className="text-xs text-slate-500 space-y-1">
+            <p>1. Acesse o painel do Mercado Pago → Suas Aplicações → Webhooks</p>
+            <p>2. Cole a URL acima no campo de Notificações (IPN/Webhooks)</p>
+            <p>3. Selecione o evento <code className="text-sky-400">payment</code></p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Links úteis */}
       <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
@@ -178,33 +273,22 @@ export function MercadoPagoIntegration() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <a
-              href="https://www.mercadopago.com.br/developers/pt/docs"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 p-3 bg-slate-900/80 rounded-lg border border-slate-700/50 hover:border-sky-500/40 hover:bg-sky-500/5 transition-all group"
-            >
-              <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-sky-400 shrink-0" />
-              <span className="text-sm text-slate-300 group-hover:text-white">Documentação</span>
-            </a>
-            <a
-              href="https://www.mercadopago.com.br/developers/panel/app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 p-3 bg-slate-900/80 rounded-lg border border-slate-700/50 hover:border-sky-500/40 hover:bg-sky-500/5 transition-all group"
-            >
-              <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-sky-400 shrink-0" />
-              <span className="text-sm text-slate-300 group-hover:text-white">Suas Aplicações</span>
-            </a>
-            <a
-              href="https://www.mercadopago.com.br/developers/panel/app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 p-3 bg-slate-900/80 rounded-lg border border-slate-700/50 hover:border-sky-500/40 hover:bg-sky-500/5 transition-all group"
-            >
-              <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-sky-400 shrink-0" />
-              <span className="text-sm text-slate-300 group-hover:text-white">Credenciais</span>
-            </a>
+            {[
+              { label: "Documentação", href: "https://www.mercadopago.com.br/developers/pt/docs" },
+              { label: "Suas Aplicações", href: "https://www.mercadopago.com.br/developers/panel/app" },
+              { label: "Credenciais", href: "https://www.mercadopago.com.br/developers/panel/app" },
+            ].map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-3 bg-slate-900/80 rounded-lg border border-slate-700/50 hover:border-sky-500/40 hover:bg-sky-500/5 transition-all group"
+              >
+                <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-sky-400 shrink-0" />
+                <span className="text-sm text-slate-300 group-hover:text-white">{link.label}</span>
+              </a>
+            ))}
           </div>
         </CardContent>
       </Card>

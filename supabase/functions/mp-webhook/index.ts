@@ -40,7 +40,6 @@ async function renewViaWWPanel(panel: any, username: string, durationDays: numbe
     'Referer': `${apiBase}/`
   };
 
-  // 1. Gerar token fixo via /auth/login
   console.log(`[WWPanel] Gerando token via POST /auth/login...`);
   const tokenResponse = await fetch(`${apiBase}/auth/login`, {
     method: 'POST',
@@ -66,11 +65,9 @@ async function renewViaWWPanel(panel: any, username: string, durationDays: numbe
     'Content-Type': 'application/json'
   };
 
-  // 2. Buscar o ID interno do usuário via API de listagem
   console.log(`[WWPanel] Buscando ID interno do usuário ${username}...`);
   let internalUserId: string | null = null;
 
-  // Tentar buscar na lista de linhas com search
   const searchUrl = `${apiBase}/lines?search=${encodeURIComponent(username)}&limit=100`;
   console.log(`[WWPanel] GET ${searchUrl}`);
   const searchResponse = await fetch(searchUrl, { headers: authHeaders });
@@ -80,7 +77,6 @@ async function renewViaWWPanel(panel: any, username: string, durationDays: numbe
   if (searchResponse.ok) {
     try {
       const searchData = JSON.parse(searchText);
-      // Handle different response formats: { data: [...] }, { items: [...] }, or direct array
       const lines = searchData.data || searchData.items || searchData.rows || (Array.isArray(searchData) ? searchData : []);
       if (Array.isArray(lines)) {
         const found = lines.find((line: any) =>
@@ -102,7 +98,6 @@ async function renewViaWWPanel(panel: any, username: string, durationDays: numbe
     throw new Error(`[WWPanel] Usuário ${username} não encontrado na API do painel. Verifique se o username está correto.`);
   }
 
-  // 3. Estender usando o ID interno numérico
   const extendUrl = `${apiBase}/lines/extend/${internalUserId}`;
   console.log(`[WWPanel] Chamando PATCH ${extendUrl} com credits=${months}...`);
 
@@ -123,7 +118,6 @@ async function renewViaWWPanel(panel: any, username: string, durationDays: numbe
 
   const newExpDate = extendData?.exp_date || extendData?.expDate || 'N/A';
 
-  // Atualizar o registro do pagamento
   await supabase
     .from('payments')
     .update({
@@ -132,7 +126,6 @@ async function renewViaWWPanel(panel: any, username: string, durationDays: numbe
     })
     .eq('id', externalReference);
 
-  // Atualizar a data de expiração no cadastro do usuário
   const formattedExpDate = formatExpirationDate(newExpDate);
   if (formattedExpDate) {
     await supabase
@@ -164,7 +157,6 @@ async function renewViaXuiOne(panel: any, username: string, durationDays: number
     'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
   };
 
-  // 1. Login via POST /auth/login
   const loginResponse = await fetch(`${apiRoot}/auth/login`, {
     method: 'POST',
     headers: { ...commonHeaders, 'Content-Type': 'application/json' },
@@ -189,7 +181,6 @@ async function renewViaXuiOne(panel: any, username: string, durationDays: number
     'Content-Type': 'application/json'
   };
 
-  // 2. Buscar usuário nos sistemas
   let internalUserId: string | null = null;
   let foundInSystem: string | null = null;
   let userDataFromApi: any = null;
@@ -227,7 +218,6 @@ async function renewViaXuiOne(panel: any, username: string, durationDays: number
     throw new Error(`[XUI] Usuário ${username} não encontrado em nenhum sistema (tentados: ${systemsToTry.join(', ')})`);
   }
 
-  // 3. PUT /extend/{userId}
   const extendQs = `token=${encodeURIComponent(authToken)}&password=${encodeURIComponent(adminPassword)}&username=${encodeURIComponent(adminUser)}`;
   const extendUrl = `${apiRoot}/${foundInSystem}/extend/${internalUserId}?${extendQs}`;
   console.log(`[XUI] Chamando PUT extend para usuário ID ${internalUserId} no sistema ${foundInSystem} com month=${months}...`);
@@ -263,14 +253,12 @@ async function renewViaXuiOne(panel: any, username: string, durationDays: number
 
     console.log(`[XUI] Renovação concluída com sucesso para ${username} no sistema ${foundInSystem}! Nova expiração: ${newExpDate}`);
   } else {
-    // FALLBACK: If extend fails, it might be a Trial. Try to convert it via deep PUT update.
     console.log(`[XUI] Extend falhou. Tentando conversão completa de Teste para Oficial (Trial to Official)...`);
     
-    // Injecting mandatory fields like WhatsApp if they are missing
     const convertBody = {
         ...userDataFromApi,
-        isTrial: false, // Forces official mode
-        whatsapp: userDataFromApi?.whatsapp || "+5511999999999", // Random fallback
+        isTrial: false,
+        whatsapp: userDataFromApi?.whatsapp || "+5511999999999",
         notes: "Ativado pelo Sistema Automático",
         month: months
     };
@@ -315,6 +303,33 @@ async function renewViaXuiOne(panel: any, username: string, durationDays: number
   }
 }
 
+// ==== Helper: resolve MP access token for a payment ====
+async function resolveAccessToken(supabase: any, adminId: string | null): Promise<string> {
+  // Try per-admin credentials first
+  if (adminId) {
+    const { data: adminCreds } = await supabase
+      .from('admin_mp_credentials')
+      .select('mp_access_token')
+      .eq('user_id', adminId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (adminCreds?.mp_access_token) {
+      console.log(`[mp-webhook] Using per-admin MP token for admin ${adminId}`);
+      return adminCreds.mp_access_token;
+    }
+  }
+
+  // Fallback to global env var
+  const globalToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
+  if (globalToken) {
+    console.log('[mp-webhook] Using global MERCADOPAGO_ACCESS_TOKEN fallback');
+    return globalToken;
+  }
+
+  throw new Error('Nenhum Access Token do Mercado Pago configurado para este admin.');
+}
+
 serve(async (req) => {
   try {
     const url = new URL(req.url);
@@ -342,9 +357,29 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const mpAccessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
-    if (!mpAccessToken) {
-      throw new Error('MERCADOPAGO_ACCESS_TOKEN is not configured');
+    // First, try to find the payment record by mp_payment_id to get admin_id
+    // We need the access token to verify with MP, but we also need to know which admin
+    // Try global token first to fetch payment info from MP, then resolve per-admin for verification
+    
+    // Step 1: Try to find our payment record that matches this MP payment ID
+    const { data: existingPayment } = await supabase
+      .from('payments')
+      .select('admin_id')
+      .eq('mp_payment_id', id.toString())
+      .maybeSingle();
+
+    // Resolve access token - use admin from existing payment if found, otherwise try all options
+    let mpAccessToken: string;
+    try {
+      mpAccessToken = await resolveAccessToken(supabase, existingPayment?.admin_id || null);
+    } catch {
+      // If we can't find by mp_payment_id, the payment might not have it yet
+      // Try global token as last resort
+      const globalToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
+      if (!globalToken) {
+        throw new Error('MERCADOPAGO_ACCESS_TOKEN is not configured');
+      }
+      mpAccessToken = globalToken;
     }
 
     // Verificar status do pagamento no Mercado Pago
@@ -354,19 +389,44 @@ serve(async (req) => {
       },
     });
 
-    const paymentInfo = await mpResponse.json();
+    let paymentInfo = await mpResponse.json();
 
-    if (!mpResponse.ok) {
+    // If the token didn't work, try per-admin tokens from all admins
+    if (!mpResponse.ok && mpResponse.status === 401) {
+      console.log('[mp-webhook] Global token failed, trying per-admin tokens...');
+      const { data: allCreds } = await supabase
+        .from('admin_mp_credentials')
+        .select('mp_access_token, user_id')
+        .eq('is_active', true);
+
+      if (allCreds && allCreds.length > 0) {
+        for (const cred of allCreds) {
+          if (!cred.mp_access_token) continue;
+          const retryResponse = await fetch(`https://api.mercadopago.com/v1/payments/${id}`, {
+            headers: { 'Authorization': `Bearer ${cred.mp_access_token}` },
+          });
+          if (retryResponse.ok) {
+            paymentInfo = await retryResponse.json();
+            mpAccessToken = cred.mp_access_token;
+            console.log(`[mp-webhook] Found working token from admin ${cred.user_id}`);
+            break;
+          }
+        }
+      }
+
+      if (!paymentInfo || paymentInfo.status === undefined) {
+        throw new Error(`Error fetching payment from MP: ${JSON.stringify(paymentInfo)}`);
+      }
+    } else if (!mpResponse.ok) {
       throw new Error(`Error fetching payment from MP: ${JSON.stringify(paymentInfo)}`);
     }
 
-    const externalReference = paymentInfo.external_reference; // payment record ID in our DB
+    const externalReference = paymentInfo.external_reference;
     if (!externalReference) {
       console.log('No external_reference, ignoring');
       return new Response("OK", { status: 200 });
     }
 
-    // Obter o registro do pagamento
     const { data: paymentRecord, error: paymentError } = await supabase
       .from('payments')
       .select('*, plans(*)')
@@ -375,16 +435,14 @@ serve(async (req) => {
 
     if (paymentError || !paymentRecord) {
       console.log('Payment record not found:', externalReference);
-      return new Response("OK", { status: 200 }); // Retornar 200 para o MP parar de enviar o webhook
+      return new Response("OK", { status: 200 });
     }
 
-    // Se já estiver processado (approved) ou renovação já iniciada, ignora
     if (paymentRecord.status === 'approved' || paymentRecord.renewal_status === 'success' || paymentRecord.renewal_status === 'processing') {
       console.log('Payment already processed or renewal in progress, skipping');
       return new Response("OK", { status: 200 });
     }
 
-    // Marcar como "processing" ANTES de renovar para evitar duplicatas (race condition)
     if (paymentInfo.status === 'approved') {
       const { error: lockError } = await supabase
         .from('payments')
@@ -399,8 +457,7 @@ serve(async (req) => {
       }
     }
 
-    // Atualiza status do pagamento no nosso banco
-    const paymentStatus = paymentInfo.status; // 'approved', 'pending', 'rejected', etc
+    const paymentStatus = paymentInfo.status;
     await supabase
       .from('payments')
       .update({
@@ -411,7 +468,6 @@ serve(async (req) => {
       .eq('id', externalReference);
 
     if (paymentStatus === 'approved') {
-      // ==== RENOVAÇÃO VIA API DO PAINEL ====
       try {
         const plan = paymentRecord.plans;
         const username = paymentRecord.iptv_username;
@@ -431,10 +487,8 @@ serve(async (req) => {
         const durationDays = plan?.duration_days || 30;
 
         if (panelType === 'wwpanel') {
-          // ==== WWPANEL API ====
           await renewViaWWPanel(panel, username, durationDays, supabase, externalReference);
         } else {
-          // ==== XUI ONE API (existing logic) ====
           await renewViaXuiOne(panel, username, durationDays, plan, supabase, externalReference);
         }
 
@@ -454,6 +508,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Webhook error:', error);
-    return new Response(JSON.stringify({ error: getErrorMessage(error) }), { status: 500 });
+    return new Response("OK", { status: 200 });
   }
 });

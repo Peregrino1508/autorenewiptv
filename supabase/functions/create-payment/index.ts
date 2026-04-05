@@ -27,10 +27,10 @@ serve(async (req) => {
     let panelData = null;
     let amount = 0;
     let paymentDescription = '';
+    let adminId: string | null = null;
 
     // Check if this is a registered user payment
     if (registered_user_payment) {
-      // Look up the registered user
       const { data: registeredUser, error: userError } = await supabase
         .from('iptv_users')
         .select('*')
@@ -42,14 +42,15 @@ serve(async (req) => {
         throw new Error('Usuário não encontrado. Verifique o número do usuário cadastrado.');
       }
 
-      // Use the amount_due from the registered user
+      // Track the admin who created this user
+      adminId = registeredUser.created_by || null;
+
       amount = Number(registeredUser.amount_due);
       if (!amount || amount <= 0) {
         throw new Error('Valor inválido para o usuário. Verifique o cadastro.');
       }
       paymentDescription = `Renovação IPTV - Usuário: ${iptv_username} - Valor: R$ ${amount.toFixed(2)}`;
       
-      // Get the user's linked plan if available
       if (registeredUser.plan_id) {
         const { data: userPlan, error: planError } = await supabase
           .from('plans')
@@ -63,7 +64,6 @@ serve(async (req) => {
         }
       }
 
-      // If no plan linked, get first active plan as fallback
       if (!planData) {
         const { data: activePlan } = await supabase
           .from('plans')
@@ -74,9 +74,7 @@ serve(async (req) => {
         planData = activePlan;
       }
 
-      // Resolve panel: user.panel_id > plan.panel_id > first active panel
       let resolvedPanelId = registeredUser.panel_id;
-
       if (!resolvedPanelId && planData?.panel_id) {
         resolvedPanelId = planData.panel_id;
       }
@@ -90,7 +88,6 @@ serve(async (req) => {
         if (panelErr || !panel) throw new Error('Painel vinculado ao usuário não encontrado');
         panelData = panel;
       } else {
-        // Fallback: first active panel
         const { data: fallbackPanel, error: panelErr2 } = await supabase
           .from('iptv_panels')
           .select('*')
@@ -102,12 +99,10 @@ serve(async (req) => {
       }
       
     } else {
-      // Regular plan-based payment
       if (!plan_id) {
         throw new Error('Para pagamentos não cadastrados, é necessário selecionar um plano');
       }
 
-      // Get plan data
       const { data: plan, error: planError } = await supabase
         .from('plans')
         .select('*')
@@ -122,7 +117,6 @@ serve(async (req) => {
       amount = Number(plan.price);
       paymentDescription = `Renovação IPTV - ${plan.name} - Usuário: ${iptv_username}`;
 
-      // Get panel data
       if (panel_id) {
         const { data, error } = await supabase.from('iptv_panels').select('*').eq('id', panel_id).single();
         if (error) throw new Error('Painel não encontrado');
@@ -134,9 +128,30 @@ serve(async (req) => {
       }
     }
 
-    const mpAccessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
+    // Resolve MP Access Token: per-admin first, then global fallback
+    let mpAccessToken: string | null = null;
+
+    if (adminId) {
+      const { data: adminCreds } = await supabase
+        .from('admin_mp_credentials')
+        .select('mp_access_token')
+        .eq('user_id', adminId)
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      if (adminCreds?.mp_access_token) {
+        mpAccessToken = adminCreds.mp_access_token;
+        console.log(`[create-payment] Using per-admin MP token for admin ${adminId}`);
+      }
+    }
+
     if (!mpAccessToken) {
-      throw new Error('MERCADOPAGO_ACCESS_TOKEN is not configured');
+      mpAccessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN') || null;
+      console.log('[create-payment] Using global MERCADOPAGO_ACCESS_TOKEN fallback');
+    }
+
+    if (!mpAccessToken) {
+      throw new Error('Nenhum Access Token do Mercado Pago configurado. Configure nas credenciais do admin ou como Secret do Supabase.');
     }
 
     // Create pending payment in database
@@ -150,13 +165,13 @@ serve(async (req) => {
         panel_id: panelData.id,
         amount: amount,
         status: 'pending',
+        admin_id: adminId,
       })
       .select()
       .single();
 
     if (paymentError) throw paymentError;
 
-    // Criar preferência no Mercado Pago
     const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
@@ -194,7 +209,6 @@ serve(async (req) => {
       throw new Error(`Mercado Pago error: ${JSON.stringify(preference)}`);
     }
 
-    // Atualizar registro com o mp_preference_id
     await supabase
       .from('payments')
       .update({ mp_preference_id: preference.id })
