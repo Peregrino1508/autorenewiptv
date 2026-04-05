@@ -33,6 +33,21 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = React.useState("");
 
+  // Check if current user is super admin
+  const { data: isSuperAdmin } = useQuery({
+    queryKey: ["is-super-admin", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return false;
+      const { data } = await supabase
+        .from("admin_profiles")
+        .select("is_super_admin")
+        .eq("user_id", user.id)
+        .single();
+      return data?.is_super_admin ?? false;
+    },
+    enabled: !!user?.id,
+  });
+
   const handleSignOut = async () => {
     await signOut();
   };
@@ -325,13 +340,15 @@ const AdminDashboard = () => {
                   <Landmark className="w-4 h-4 mr-2" />
                   Mercado Pago
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="admin-registration" 
-                  className="flex-1 min-w-[120px] md:min-w-[140px] data-[state=active]:bg-emerald-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm"
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Cad. Admin
-                </TabsTrigger>
+                {isSuperAdmin && (
+                  <TabsTrigger 
+                    value="admin-registration" 
+                    className="flex-1 min-w-[120px] md:min-w-[140px] data-[state=active]:bg-emerald-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Cad. Admin
+                  </TabsTrigger>
+                )}
               </TabsList>
 
           <TabsContent value="panels" className="mt-6">
@@ -366,9 +383,11 @@ const AdminDashboard = () => {
                 <MercadoPagoIntegration />
               </TabsContent>
 
-              <TabsContent value="admin-registration" className="mt-6">
-                <AdminRegistration />
-              </TabsContent>
+              {isSuperAdmin && (
+                <TabsContent value="admin-registration" className="mt-6">
+                  <AdminRegistration />
+                </TabsContent>
+              )}
             </Tabs>
           </CardContent>
         </Card>

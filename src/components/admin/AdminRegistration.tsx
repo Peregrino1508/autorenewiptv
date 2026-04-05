@@ -88,14 +88,12 @@ export function AdminRegistration() {
   // Delete admin mutation
   const deleteAdmin = useMutation({
     mutationFn: async (adminUserId: string) => {
-      // Use service role via edge function would be better, but for now
-      // we delete the profile (cascade will handle auth user)
-      const { error } = await supabase
-        .from("admin_profiles")
-        .delete()
-        .eq("user_id", adminUserId)
-        .eq("is_super_admin", false); // Prevent deleting super admin
+      const { data, error } = await supabase.functions.invoke("delete-admin-user", {
+        body: { admin_user_id: adminUserId },
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-profiles"] });

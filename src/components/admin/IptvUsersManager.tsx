@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ interface IptvUsersManagerProps {
 }
 
 export function IptvUsersManager({ searchTerm = "" }: IptvUsersManagerProps) {
+  const { user: currentUser } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<IptvUser | null>(null);
   const queryClient = useQueryClient();
@@ -82,7 +84,7 @@ export function IptvUsersManager({ searchTerm = "" }: IptvUsersManagerProps) {
       } else {
         const { error } = await supabase
           .from("iptv_users")
-          .insert([user]);
+          .insert([{ ...user, created_by: currentUser?.id }]);
         if (error) throw error;
       }
     },

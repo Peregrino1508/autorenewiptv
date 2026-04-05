@@ -163,6 +163,7 @@ export type Database = {
           admin_password: string
           admin_user: string
           created_at: string
+          created_by: string | null
           id: string
           is_active: boolean
           name: string
@@ -176,6 +177,7 @@ export type Database = {
           admin_password: string
           admin_user: string
           created_at?: string
+          created_by?: string | null
           id?: string
           is_active?: boolean
           name: string
@@ -189,6 +191,7 @@ export type Database = {
           admin_password?: string
           admin_user?: string
           created_at?: string
+          created_by?: string | null
           id?: string
           is_active?: boolean
           name?: string
@@ -263,6 +266,7 @@ export type Database = {
       monthly_statements: {
         Row: {
           created_at: string | null
+          created_by: string | null
           gross_revenue: number
           id: string
           month: number
@@ -275,6 +279,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          created_by?: string | null
           gross_revenue?: number
           id?: string
           month: number
@@ -287,6 +292,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          created_by?: string | null
           gross_revenue?: number
           id?: string
           month?: number
@@ -374,6 +380,7 @@ export type Database = {
       plans: {
         Row: {
           created_at: string
+          created_by: string | null
           description: string | null
           duration_days: number
           id: string
@@ -385,6 +392,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           description?: string | null
           duration_days: number
           id?: string
@@ -396,6 +404,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           description?: string | null
           duration_days?: number
           id?: string
@@ -444,6 +453,7 @@ export type Database = {
       }
       spreadsheet_settings: {
         Row: {
+          created_by: string | null
           id: string
           last_selected_month: string | null
           sort_direction: string | null
@@ -451,6 +461,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          created_by?: string | null
           id?: string
           last_selected_month?: string | null
           sort_direction?: string | null
@@ -458,6 +469,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          created_by?: string | null
           id?: string
           last_selected_month?: string | null
           sort_direction?: string | null
