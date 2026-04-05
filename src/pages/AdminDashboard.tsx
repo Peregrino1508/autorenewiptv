@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Activity, Settings, CreditCard, Package, Users, LogOut, ShoppingCart, DollarSign, FileText, Menu, FileSpreadsheet, Search, Landmark, UserPlus } from "lucide-react";
 import { MercadoPagoIntegration } from "@/components/admin/MercadoPagoIntegration";
+import { AdminRegistration } from "@/components/admin/AdminRegistration";
 import { Input } from "@/components/ui/input";
 import {
   Sheet,
@@ -321,6 +322,16 @@ const AdminDashboard = () => {
                   value="mercadopago" 
                   className="flex-1 min-w-[120px] md:min-w-[140px] data-[state=active]:bg-sky-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm"
                 >
+                  <Landmark className="w-4 h-4 mr-2" />
+                  Mercado Pago
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="admin-registration" 
+                  className="flex-1 min-w-[120px] md:min-w-[140px] data-[state=active]:bg-emerald-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Cad. Admin
+                </TabsTrigger>
                   <Landmark className="w-4 h-4 mr-2" />
                   Mercado Pago
                 </TabsTrigger>
