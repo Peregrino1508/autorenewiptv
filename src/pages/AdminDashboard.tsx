@@ -323,7 +323,8 @@ const AdminDashboard = () => {
                 </TabsTrigger>
                 <TabsTrigger 
                   value="settings" 
-                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm"
+                  disabled={!isSuperAdmin}
+                  className="flex-1 min-w-[120px] data-[state=active]:bg-purple-500/30 data-[state=active]:text-white text-slate-300 text-xs md:text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Settings className="w-4 h-4 mr-2" />
                   Configurações
