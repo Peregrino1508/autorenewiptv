@@ -16,6 +16,8 @@ export function MercadoPagoIntegration() {
   const [webhookSecret, setWebhookSecret] = useState("");
   const [showAccessToken, setShowAccessToken] = useState(false);
   const [showWebhookSecret, setShowWebhookSecret] = useState(false);
+  const [showInputAccessToken, setShowInputAccessToken] = useState(false);
+  const [showInputWebhookSecret, setShowInputWebhookSecret] = useState(false);
 
   // Fetch current admin's MP credentials
   const { data: credentials, isLoading } = useQuery({
@@ -211,14 +213,25 @@ export function MercadoPagoIntegration() {
               <Label htmlFor="mp_token" className="text-slate-300">
                 {hasAccessToken ? "Atualizar Access Token" : "Access Token"}
               </Label>
-              <Input
-                id="mp_token"
-                type="password"
-                value={accessToken}
-                onChange={(e) => setAccessToken(e.target.value)}
-                className="bg-slate-900 border-slate-700 text-white mt-1 font-mono text-xs"
-                placeholder="APP_USR-0000000000000000-000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-000000000"
-              />
+              <div className="relative">
+                <Input
+                  id="mp_token"
+                  type={showInputAccessToken ? "text" : "password"}
+                  value={accessToken}
+                  onChange={(e) => setAccessToken(e.target.value)}
+                  className="bg-slate-900 border-slate-700 text-white mt-1 font-mono text-xs pr-10"
+                  placeholder="APP_USR-0000000000000000-000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-000000000"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-400 hover:text-white"
+                  onClick={() => setShowInputAccessToken(!showInputAccessToken)}
+                >
+                  {showInputAccessToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -264,14 +277,25 @@ export function MercadoPagoIntegration() {
             <Label htmlFor="mp_secret" className="text-slate-300">
               {credentials?.mp_webhook_secret ? "Atualizar Assinatura Secreta" : "Assinatura Secreta"}
             </Label>
-            <Input
-              id="mp_secret"
-              type="password"
-              value={webhookSecret}
-              onChange={(e) => setWebhookSecret(e.target.value)}
-              className="bg-slate-900 border-slate-700 text-white mt-1 font-mono text-xs"
-              placeholder="Cole aqui a assinatura secreta do webhook"
-            />
+            <div className="relative">
+              <Input
+                id="mp_secret"
+                type={showInputWebhookSecret ? "text" : "password"}
+                value={webhookSecret}
+                onChange={(e) => setWebhookSecret(e.target.value)}
+                className="bg-slate-900 border-slate-700 text-white mt-1 font-mono text-xs pr-10"
+                placeholder="Cole aqui a assinatura secreta do webhook"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-400 hover:text-white"
+                onClick={() => setShowInputWebhookSecret(!showInputWebhookSecret)}
+              >
+                {showInputWebhookSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
           <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
             <p className="text-xs text-slate-400 leading-relaxed">
