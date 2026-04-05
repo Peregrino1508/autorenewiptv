@@ -6,14 +6,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { ExternalLink, Key, ShieldCheck, AlertTriangle, CheckCircle2, Copy, Eye, EyeOff, Webhook } from "lucide-react";
+import { ExternalLink, Key, ShieldCheck, AlertTriangle, CheckCircle2, Copy, Eye, EyeOff, Webhook, Lock } from "lucide-react";
 
 export function MercadoPagoIntegration() {
   const queryClient = useQueryClient();
   
   const [publicKey, setPublicKey] = useState("");
   const [accessToken, setAccessToken] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
   const [showAccessToken, setShowAccessToken] = useState(false);
+  const [showWebhookSecret, setShowWebhookSecret] = useState(false);
 
   // Fetch current admin's MP credentials
   const { data: credentials, isLoading } = useQuery({
@@ -47,6 +49,7 @@ export function MercadoPagoIntegration() {
       const updates: Record<string, any> = {};
       if (publicKey.trim()) updates.mp_public_key = publicKey.trim();
       if (accessToken.trim()) updates.mp_access_token = accessToken.trim();
+      if (webhookSecret.trim()) updates.mp_webhook_secret = webhookSecret.trim();
 
       if (Object.keys(updates).length === 0) {
         throw new Error("Preencha pelo menos um campo");
@@ -71,6 +74,7 @@ export function MercadoPagoIntegration() {
       queryClient.invalidateQueries({ queryKey: ["admin-mp-credentials"] });
       setPublicKey("");
       setAccessToken("");
+      setWebhookSecret("");
       toast({
         title: "Sucesso! ✅",
         description: "Credenciais do Mercado Pago salvas com sucesso.",
@@ -220,10 +224,67 @@ export function MercadoPagoIntegration() {
         </Card>
       </div>
 
+      {/* Webhook Secret (Optional) */}
+      <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center">
+            <Lock className="w-5 h-5 mr-2 text-red-400" />
+            Assinatura Secreta do Webhook (Opcional)
+          </CardTitle>
+          <CardDescription className="text-slate-400">
+            Não é obrigatória, mas é <span className="text-amber-300 font-semibold">essencial para sua segurança</span>. Sem ela, qualquer pessoa que descobrir sua URL de webhook pode enviar notificações falsas de pagamento, simulando aprovações que nunca aconteceram. Com a assinatura secreta, o sistema valida que a notificação realmente veio do Mercado Pago.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {credentials?.mp_webhook_secret && (
+            <div className="space-y-2">
+              <Label className="text-emerald-400 text-xs font-semibold flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Assinatura Configurada
+              </Label>
+              <div className="flex items-center gap-2 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
+                <p className="text-sm text-emerald-300 font-mono truncate flex-1">
+                  {showWebhookSecret
+                    ? credentials.mp_webhook_secret
+                    : "••••••••••••••••••••••••••••••••"
+                  }
+                </p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-emerald-400 hover:text-white shrink-0"
+                  onClick={() => setShowWebhookSecret(!showWebhookSecret)}
+                >
+                  {showWebhookSecret ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                </Button>
+              </div>
+            </div>
+          )}
+          <div>
+            <Label htmlFor="mp_secret" className="text-slate-300">
+              {credentials?.mp_webhook_secret ? "Atualizar Assinatura Secreta" : "Assinatura Secreta"}
+            </Label>
+            <Input
+              id="mp_secret"
+              type="password"
+              value={webhookSecret}
+              onChange={(e) => setWebhookSecret(e.target.value)}
+              className="bg-slate-900 border-slate-700 text-white mt-1 font-mono text-xs"
+              placeholder="Cole aqui a assinatura secreta do webhook"
+            />
+          </div>
+          <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
+            <p className="text-xs text-slate-400 leading-relaxed">
+              <span className="text-red-400 font-semibold">📍 Onde encontrar:</span> No painel do Mercado Pago → Suas Aplicações → Webhooks → Assinatura Secreta. Copie e cole aqui.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Save Button */}
       <Button
         onClick={() => saveCredentials.mutate()}
-        disabled={(!publicKey.trim() && !accessToken.trim()) || saveCredentials.isPending}
+        disabled={(!publicKey.trim() && !accessToken.trim() && !webhookSecret.trim()) || saveCredentials.isPending}
         className="w-full bg-sky-600 hover:bg-sky-700 text-white h-12 text-base"
       >
         <ShieldCheck className="w-5 h-5 mr-2" />

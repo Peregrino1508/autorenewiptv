@@ -21,6 +21,7 @@ export type Database = {
           is_active: boolean | null
           mp_access_token: string | null
           mp_public_key: string | null
+          mp_webhook_secret: string | null
           updated_at: string | null
           user_id: string
         }
@@ -30,6 +31,7 @@ export type Database = {
           is_active?: boolean | null
           mp_access_token?: string | null
           mp_public_key?: string | null
+          mp_webhook_secret?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -39,6 +41,7 @@ export type Database = {
           is_active?: boolean | null
           mp_access_token?: string | null
           mp_public_key?: string | null
+          mp_webhook_secret?: string | null
           updated_at?: string | null
           user_id?: string
         }
