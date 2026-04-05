@@ -93,13 +93,13 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
 
   // Load settings
   const { data: settings } = useQuery({
-    queryKey: ["spreadsheet-settings"],
+    queryKey: ["spreadsheet-settings", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("spreadsheet_settings")
         .select("*")
-        .eq("id", '00000000-0000-0000-0000-000000000000')
-        .maybeSingle(); // Use maybeSingle to avoid errors if empty
+        .eq("created_by", user?.id!)
+        .maybeSingle();
       
       if (error) throw error;
       return data;
@@ -108,12 +108,13 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
   });
 
   const { data: records, isLoading } = useQuery({
-    queryKey: ["customer-records", selectedMonth],
+    queryKey: ["customer-records", selectedMonth, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customer_records")
         .select("*")
-        .eq("sheet_month", selectedMonth);
+        .eq("sheet_month", selectedMonth)
+        .eq("created_by", user?.id!);
 
       if (error) throw error;
       
@@ -132,17 +133,17 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
   });
 
   const availableMonths = useQuery({
-    queryKey: ["available-months"],
+    queryKey: ["available-months", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customer_records")
         .select("sheet_month")
+        .eq("created_by", user?.id!)
         .not("sheet_month", "is", null);
       
       if (error) throw error;
       const uniqueMonths = Array.from(new Set((data as any[]).map(item => item.sheet_month)));
       
-      // We no longer force the current month here so that deleted months stay visually gone
       return uniqueMonths.sort((a, b) => {
         const [monthA, yearA] = a.split(" ");
         const [monthB, yearB] = b.split(" ");
@@ -155,11 +156,25 @@ export function SpreadsheetManager({ searchTerm = "" }: SpreadsheetManagerProps)
 
   const settingsMutation = useMutation({
     mutationFn: async (newSettings: any) => {
-      const { error } = await supabase
+      // Try update first, if no rows affected, insert
+      const { data: existing } = await supabase
         .from("spreadsheet_settings")
-        .update(newSettings)
-        .eq("id", '00000000-0000-0000-0000-000000000000');
-      if (error) throw error;
+        .select("id")
+        .eq("created_by", user?.id!)
+        .maybeSingle();
+      
+      if (existing) {
+        const { error } = await supabase
+          .from("spreadsheet_settings")
+          .update(newSettings)
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("spreadsheet_settings")
+          .insert({ ...newSettings, created_by: user?.id });
+        if (error) throw error;
+      }
     },
   });
 
