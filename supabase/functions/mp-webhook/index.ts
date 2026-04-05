@@ -305,7 +305,6 @@ async function renewViaXuiOne(panel: any, username: string, durationDays: number
 
 // ==== Helper: resolve MP access token for a payment ====
 async function resolveAccessToken(supabase: any, adminId: string | null): Promise<string> {
-  // Try per-admin credentials first
   if (adminId) {
     const { data: adminCreds } = await supabase
       .from('admin_mp_credentials')
@@ -320,7 +319,6 @@ async function resolveAccessToken(supabase: any, adminId: string | null): Promis
     }
   }
 
-  // Fallback to global env var
   const globalToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
   if (globalToken) {
     console.log('[mp-webhook] Using global MERCADOPAGO_ACCESS_TOKEN fallback');
@@ -328,6 +326,73 @@ async function resolveAccessToken(supabase: any, adminId: string | null): Promis
   }
 
   throw new Error('Nenhum Access Token do Mercado Pago configurado para este admin.');
+}
+
+// ==== Helper: validate webhook signature ====
+async function validateWebhookSignature(req: Request, supabase: any, dataId: string): Promise<void> {
+  const xSignature = req.headers.get('x-signature');
+  const xRequestId = req.headers.get('x-request-id');
+
+  if (!xSignature || !xRequestId) {
+    console.log('[mp-webhook] No x-signature header, skipping signature validation');
+    return;
+  }
+
+  // Parse x-signature: "ts=TIMESTAMP,v1=HASH"
+  const parts: Record<string, string> = {};
+  xSignature.split(',').forEach(part => {
+    const [key, value] = part.split('=', 2);
+    if (key && value) parts[key.trim()] = value.trim();
+  });
+
+  const ts = parts['ts'];
+  const v1 = parts['v1'];
+
+  if (!ts || !v1) {
+    console.log('[mp-webhook] x-signature missing ts or v1, skipping validation');
+    return;
+  }
+
+  // Try to find a webhook secret from any admin
+  const { data: allCreds } = await supabase
+    .from('admin_mp_credentials')
+    .select('mp_webhook_secret, user_id')
+    .eq('is_active', true)
+    .not('mp_webhook_secret', 'is', null);
+
+  if (!allCreds || allCreds.length === 0) {
+    console.log('[mp-webhook] No webhook secrets configured, skipping signature validation');
+    return;
+  }
+
+  // Build the manifest string as per MP docs
+  const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+
+  // Try each admin's secret to find a match
+  const encoder = new TextEncoder();
+  for (const cred of allCreds) {
+    if (!cred.mp_webhook_secret) continue;
+    
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(cred.mp_webhook_secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(manifest));
+    const hashHex = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+    if (hashHex === v1) {
+      console.log(`[mp-webhook] Signature validated successfully for admin ${cred.user_id}`);
+      return;
+    }
+  }
+
+  // If we got here, no secret matched
+  console.error('[mp-webhook] SIGNATURE VALIDATION FAILED - possible forged webhook!');
+  throw new Error('Webhook signature validation failed');
 }
 
 serve(async (req) => {
