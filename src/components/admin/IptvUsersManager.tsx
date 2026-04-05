@@ -19,7 +19,7 @@ interface IptvUsersManagerProps {
 }
 
 export function IptvUsersManager({ searchTerm = "" }: IptvUsersManagerProps) {
-  const { user } = useAuth();
+  const { user: currentUser } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<IptvUser | null>(null);
   const queryClient = useQueryClient();
@@ -84,7 +84,7 @@ export function IptvUsersManager({ searchTerm = "" }: IptvUsersManagerProps) {
       } else {
         const { error } = await supabase
           .from("iptv_users")
-          .insert([{ ...user, created_by: this.user?.id }]);
+          .insert([{ ...user, created_by: currentUser?.id }]);
         if (error) throw error;
       }
     },
