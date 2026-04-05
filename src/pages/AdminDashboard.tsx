@@ -54,15 +54,16 @@ const AdminDashboard = () => {
 
   // Fetch dashboard statistics
   const { data: stats } = useQuery({
-    queryKey: ["dashboard-stats"],
+    queryKey: ["dashboard-stats", user?.id],
     queryFn: async () => {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const uid = user?.id;
 
       const [panelsResult, plansResult, paymentsResult] = await Promise.all([
-        supabase.from("iptv_panels").select("*", { count: "exact", head: true }),
-        supabase.from("plans").select("*", { count: "exact", head: true }),
-        supabase.from("payments").select("amount").eq("status", "approved").gte("created_at", startOfMonth),
+        supabase.from("iptv_panels").select("*", { count: "exact", head: true }).eq("created_by", uid!),
+        supabase.from("plans").select("*", { count: "exact", head: true }).eq("created_by", uid!),
+        supabase.from("payments").select("amount").eq("status", "approved").eq("admin_id", uid!).gte("created_at", startOfMonth),
       ]);
 
       let monthlyProfit = 0;
@@ -84,13 +85,14 @@ const AdminDashboard = () => {
 
   // Fetch panels for dynamic test buttons
   const { data: activePanels } = useQuery({
-    queryKey: ["active-panels-buttons"],
+    queryKey: ["active-panels-buttons", user?.id],
     queryFn: async () => {
       try {
         const { data, error } = await supabase
           .from("iptv_panels")
           .select("id, name, panel_type, notes")
-          .eq("is_active", true);
+          .eq("is_active", true)
+          .eq("created_by", user?.id!);
         
         if (error) throw error;
         

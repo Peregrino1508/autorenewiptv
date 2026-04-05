@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -15,13 +16,15 @@ interface MonthlyStats {
 }
 
 export function FinancialReports() {
+  const { user } = useAuth();
   const { data: reports, isLoading } = useQuery({
-    queryKey: ["financial-reports"],
+    queryKey: ["financial-reports", user?.id],
     queryFn: async () => {
       const { data: payments, error } = await supabase
         .from("payments")
         .select("amount, created_at")
-        .eq("status", "approved");
+        .eq("status", "approved")
+        .eq("admin_id", user?.id!);
 
       if (error) throw error;
 

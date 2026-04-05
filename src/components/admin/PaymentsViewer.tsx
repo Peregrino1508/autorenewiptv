@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -71,12 +72,14 @@ interface PaymentsViewerProps {
 }
 
 export function PaymentsViewer({ searchTerm = "" }: PaymentsViewerProps) {
+  const { user } = useAuth();
   const { data: payments, isLoading } = useQuery({
-    queryKey: ["iptv-payments"],
+    queryKey: ["iptv-payments", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("payments")
         .select(`*, plans (name)`)
+        .eq("admin_id", user?.id!)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
