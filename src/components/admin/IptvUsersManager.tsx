@@ -84,7 +84,7 @@ export function IptvUsersManager({ searchTerm = "" }: IptvUsersManagerProps) {
       } else {
         const { error } = await supabase
           .from("iptv_users")
-          .insert([{ ...user, created_by: this_user_id }]);
+          .insert([{ ...user, created_by: this.user?.id }]);
         if (error) throw error;
       }
     },
